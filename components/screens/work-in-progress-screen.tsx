@@ -24,7 +24,11 @@ import {
   X,
   CalendarX,
   Shield,
-  ListChecks
+  ListChecks,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Mail
 } from "lucide-react"
 
 interface WIPCounts {
@@ -53,6 +57,9 @@ interface WIPCounts {
 export function WorkInProgressScreen() {
   const { data, updateData } = useOnboarding()
   const [hasWIPJobs, setHasWIPJobs] = useState(false)
+  const [isFormsExpanded, setIsFormsExpanded] = useState(false)
+  const [isDashboardsExpanded, setIsDashboardsExpanded] = useState(false)
+  const [isTemplatesExpanded, setIsTemplatesExpanded] = useState(false)
   const [wipCounts, setWipCounts] = useState<WIPCounts>({
     totalJobs: 0,
     inProgress: 0,
@@ -137,6 +144,11 @@ export function WorkInProgressScreen() {
     return wipCounts.safetyForms + wipCounts.customChecklists
   }
 
+  // Get selected forms and dashboards from Your Services screen
+  const selectedForms = data.industryConfiguration?.selectedForms || []
+  const selectedDashboards = data.industryConfiguration?.selectedDashboards || []
+  const selectedIndustries = data.industryConfiguration?.selectedIndustries || []
+
   return (
     <div className="container mx-auto max-w-4xl">
       <div className="mb-8">
@@ -148,35 +160,46 @@ export function WorkInProgressScreen() {
 
       <div className="space-y-8">
         <Card>
-          <CardHeader>
-            <CardTitle>Why We Need This</CardTitle>
-            <CardDescription>This helps us customize your system setup and training</CardDescription>
+          <CardHeader className="text-center">
+            <CardTitle className="text-xl">Why We Need This</CardTitle>
+            <CardDescription className="text-base">This helps us customize your system setup and training</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-2">✓ Custom Training</h4>
-                  <p className="text-sm text-blue-700">Scenarios that match your actual workload</p>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold text-lg">✓</span>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Bespoke Guides</h4>
+                  <p className="text-sm text-blue-700 leading-relaxed">Scenarios that match your actual workload</p>
                 </div>
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-2">✓ Smart Setup</h4>
-                  <p className="text-sm text-blue-700">Configure workflows for your business size</p>
+                <div className="text-center">
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold text-lg">✓</span>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Smart Setup</h4>
+                  <p className="text-sm text-blue-700 leading-relaxed">Configure workflows for your business size</p>
                 </div>
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-2">✓ Better Reports</h4>
-                  <p className="text-sm text-blue-700">Track what matters most to you</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-blue-800 mb-2">✓ Time Savings</h4>
-                  <p className="text-sm text-blue-700">Skip features you don't need</p>
+                <div className="text-center">
+                  <div className="flex justify-center mb-3">
+                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-bold text-lg">✓</span>
+                    </div>
+                  </div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Time Savings</h4>
+                  <p className="text-sm text-blue-700 leading-relaxed">Skip features you don't need</p>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>When Did These Jobs Start?</CardTitle>
             <CardDescription>The numbers you're about to enter - when did most of these jobs begin?</CardDescription>
@@ -198,7 +221,7 @@ export function WorkInProgressScreen() {
               </p>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* <Card>
           <CardHeader>
@@ -402,7 +425,7 @@ export function WorkInProgressScreen() {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    {/* <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <CalendarX className="w-4 h-4 text-gray-600" />
                         <Label htmlFor="expiredQuotes">Expired</Label>
@@ -416,7 +439,7 @@ export function WorkInProgressScreen() {
                         className="w-20 text-center"
                         placeholder="0"
                       />
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-4">
@@ -506,7 +529,7 @@ export function WorkInProgressScreen() {
                         placeholder="0"
                       />
                     </div>
-
+{/* 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <DollarSign className="w-4 h-4 text-green-600" />
@@ -521,7 +544,7 @@ export function WorkInProgressScreen() {
                         className="w-20 text-center"
                         placeholder="0"
                       />
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-4">
@@ -553,97 +576,312 @@ export function WorkInProgressScreen() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Forms & Documentation</CardTitle>
-                <CardDescription>How many specialized forms do you use? (Only if you use safety forms or checklists)</CardDescription>
+                <CardTitle>Forms & Documentation Overview</CardTitle>
+                <CardDescription>Review your selected forms and dashboard configurations from the Services section</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-yellow-800">
-                    ℹ️ <strong>No special forms?</strong> Many businesses don't use these - just put 0 or skip
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-red-600" />
-                      <Label htmlFor="safetyForms">Safety & Compliance Forms</Label>
+                {selectedIndustries.includes("Electrical Maintenance") ? (
+                  <div className="space-y-6">
+                    {/* Selected Forms Section */}
+                    <div>
+                      <div 
+                        className="flex items-center justify-between cursor-pointer p-3 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+                        onClick={() => setIsFormsExpanded(!isFormsExpanded)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <FileText className="w-5 h-5 text-green-600" />
+                          <div>
+                            <h4 className="font-semibold text-green-800">Selected Forms</h4>
+                            <p className="text-sm text-green-700">{selectedForms.length} forms configured</p>
+                          </div>
+                        </div>
+                        {isFormsExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-green-600" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-green-600" />
+                        )}
+                      </div>
+                      
+                      {isFormsExpanded && (
+                        <div className="mt-3 ml-4 space-y-2">
+                          {selectedForms.length > 0 ? (
+                            selectedForms.map((form, index) => (
+                              <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <span>{form}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No forms selected in Your Services</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Input
-                      id="safetyForms"
-                      type="number"
-                      min="0"
-                      value={wipCounts.safetyForms}
-                      onChange={(e) => handleCountChange('safetyForms', parseInt(e.target.value) || 0)}
-                      className="w-20 text-center"
-                      placeholder="0"
-                    />
-                  </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ListChecks className="w-4 h-4 text-blue-600" />
-                      <Label htmlFor="customChecklists">Custom Checklists & Documents</Label>
+                    {/* Selected Dashboards Section */}
+                    <div>
+                      <div 
+                        className="flex items-center justify-between cursor-pointer p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                        onClick={() => setIsDashboardsExpanded(!isDashboardsExpanded)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <ListChecks className="w-5 h-5 text-blue-600" />
+                          <div>
+                            <h4 className="font-semibold text-blue-800">Selected Dashboards</h4>
+                            <p className="text-sm text-blue-700">{selectedDashboards.length} dashboards configured</p>
+                          </div>
+                        </div>
+                        {isDashboardsExpanded ? (
+                          <ChevronUp className="w-5 h-5 text-blue-600" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-blue-600" />
+                        )}
+                      </div>
+                      
+                      {isDashboardsExpanded && (
+                        <div className="mt-3 ml-4 space-y-2">
+                          {selectedDashboards.length > 0 ? (
+                            selectedDashboards.map((dashboard, index) => (
+                              <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                                <CheckCircle className="w-4 h-4 text-blue-600" />
+                                <span>{dashboard}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No dashboards selected in Your Services</p>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <Input
-                      id="customChecklists"
-                      type="number"
-                      min="0"
-                      value={wipCounts.customChecklists}
-                      onChange={(e) => handleCountChange('customChecklists', parseInt(e.target.value) || 0)}
-                      className="w-20 text-center"
-                      placeholder="0"
-                    />
                   </div>
-
-                  <div className="bg-gray-50 rounded-lg p-3 mt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Total Forms:</span>
-                      <span className="font-medium">{wipCounts.safetyForms + wipCounts.customChecklists}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      We'll help digitize these forms for streamlined workflows
+                ) : (
+                  <div className="text-center py-8">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h4 className="font-medium text-gray-600 mb-2">No Industry Selected</h4>
+                    <p className="text-sm text-gray-500">
+                      Please complete the "Your Services" section to see your form and dashboard configurations here.
                     </p>
                   </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Document Templates Overview</CardTitle>
+                <CardDescription>Review the default templates available in the system for your business documents</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-800">
+                    ℹ️ <strong>Default Templates Included</strong> - JobLogic comes with professional templates ready to use
+                  </p>
+                </div>
+
+                <div>
+                  <div 
+                    className="flex items-center justify-between cursor-pointer p-3 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                    onClick={() => setIsTemplatesExpanded(!isTemplatesExpanded)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="w-5 h-5 text-purple-600" />
+                      <div>
+                        <h4 className="font-semibold text-purple-800">Available Templates</h4>
+                        <p className="text-sm text-purple-700">Professional templates for all document types</p>
+                      </div>
+                    </div>
+                    {isTemplatesExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-purple-600" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-purple-600" />
+                    )}
+                  </div>
+                  
+                  {isTemplatesExpanded && (
+                    <div className="mt-3 space-y-4">
+                      {/* Jobsheet Templates */}
+                      <div className="bg-white rounded-lg border p-4">
+                        <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <Clipboard className="w-4 h-4 text-blue-600" />
+                          Jobsheet Templates
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {[
+                            "Default Jobsheet Template",
+                            "Grey and Blue Job Sheet Template", 
+                            "Light Tones Job Sheet Template",
+                            "Simple Job Sheet Template",
+                            "Styled Job Sheet Template",
+                            "Traditional Job Sheet Template"
+                          ].map((template, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              <span>{template}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Quote Templates */}
+                      <div className="bg-white rounded-lg border p-4">
+                        <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-blue-600" />
+                          Quote Templates
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {[
+                            "Blue Transition Quote Template",
+                            "Default Quote Template",
+                            "Original Blue Quote Template",
+                            "Simple Colour Quote Template",
+                            "Simple Quote Template",
+                            "Traditional Quote Template"
+                          ].map((template, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              <span>{template}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Invoice Templates */}
+                      <div className="bg-white rounded-lg border p-4">
+                        <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <DollarSign className="w-4 h-4 text-blue-600" />
+                          Invoice Templates
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {[
+                            "Blue Invoice Template",
+                            "Dark Blue Invoice Template",
+                            "Default Invoice Template",
+                            "Direct Sales Invoice Template",
+                            "Oceans Invoice Template",
+                            "Reverse VAT Invoice Template",
+                            "Simple Invoice Template",
+                            "Traditional Invoice Template"
+                          ].map((template, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              <span>{template}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Credit Templates */}
+                      <div className="bg-white rounded-lg border p-4">
+                        <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <Edit className="w-4 h-4 text-blue-600" />
+                          Credit Templates
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {[
+                            "Aqua Credit Template",
+                            "Basic Blue Credit Template",
+                            "Dark Blue Line Credit Template",
+                            "Default Credit Template",
+                            "Original Credit Template",
+                            "Reverse VAT Credit Template",
+                            "Simple Credit Template"
+                          ].map((template, index) => (
+                            <div key={index} className="flex items-center gap-2 text-sm text-gray-700">
+                              <CheckCircle className="w-3 h-3 text-green-600" />
+                              <span>{template}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Asset & Task Compliance Templates */}
+                      <div className="bg-white rounded-lg border p-4">
+                        <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-blue-600" />
+                          Asset & Task Compliance Templates
+                        </h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <div className="flex items-center gap-2 text-sm text-gray-700">
+                            <CheckCircle className="w-3 h-3 text-green-600" />
+                            <span>Default Asset Task Compliance Template</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Document Templates</CardTitle>
-                <CardDescription>How many custom templates do you want? (Only if you want branded documents)</CardDescription>
+                <CardTitle>Need Custom Solutions?</CardTitle>
+                <CardDescription>Get help with bespoke forms and custom templates for your business needs</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-yellow-800">
-                    ℹ️ <strong>Happy with basic templates?</strong> Put 0 - you can always add custom ones later
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-purple-600" />
-                      <Label htmlFor="documentTemplates">Custom Templates</Label>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-purple-800 mb-4 flex items-center gap-2">
+                    <Shield className="w-5 h-5" />
+                    Professional Services Available
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Professional Development Services */}
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-purple-800 flex items-center gap-2">
+                        <Mail className="w-4 h-4" />
+                        Professional Development
+                      </h5>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+                          <FileText className="w-4 h-4 text-purple-600 mt-0.5" />
+                          <div>
+                            <h6 className="font-medium text-purple-800 text-sm">Custom Forms</h6>
+                            <p className="text-xs text-purple-700">
+                              Bespoke forms designed for your specific industry requirements and workflows
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+                          <Clipboard className="w-4 h-4 text-purple-600 mt-0.5" />
+                          <div>
+                            <h6 className="font-medium text-purple-800 text-sm">Branded Templates</h6>
+                            <p className="text-xs text-purple-700">
+                              Professional document templates with your company branding and styling
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-purple-600 font-medium">Chargeable service</span>
                     </div>
-                    <Input
-                      id="documentTemplates"
-                      type="number"
-                      min="0"
-                      value={wipCounts.documentTemplates}
-                      onChange={(e) => handleCountChange('documentTemplates', parseInt(e.target.value) || 0)}
-                      className="w-20 text-center"
-                      placeholder="0"
-                    />
-                  </div>
 
-                  <div className="bg-gray-50 rounded-lg p-3 mt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Templates to Create:</span>
-                      <span className="font-medium">{wipCounts.documentTemplates}</span>
+                    {/* Self-Service Resources */}
+                    <div className="space-y-3">
+                      <h5 className="font-medium text-purple-800 flex items-center gap-2">
+                        <ExternalLink className="w-4 h-4" />
+                        Self-Service Resources
+                      </h5>
+                      <div className="space-y-2">
+                        <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+                          <FileText className="w-4 h-4 text-purple-600 mt-0.5" />
+                          <div>
+                            <h6 className="font-medium text-purple-800 text-sm">Form Builder Guides</h6>
+                            <p className="text-xs text-purple-700">
+                              Step-by-step instructions to create your own custom forms and checklists
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3 p-3 bg-white rounded-lg border">
+                          <Clipboard className="w-4 h-4 text-purple-600 mt-0.5" />
+                          <div>
+                            <h6 className="font-medium text-purple-800 text-sm">Template Customization</h6>
+                            <p className="text-xs text-purple-700">
+                              Learn how to modify existing templates or create new ones from scratch
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="text-xs text-purple-600 font-medium">Free resource</span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      We'll help you design professional templates for invoices, quotes, and certificates
-                    </p>
                   </div>
                 </div>
               </CardContent>

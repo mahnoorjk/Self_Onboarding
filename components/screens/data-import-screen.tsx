@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useOnboarding } from "../onboarding-context"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
@@ -21,6 +22,9 @@ import {
   FileSpreadsheet,
   Link,
   Upload,
+  Clock,
+  Download,
+  AlertCircle,
 } from "lucide-react"
 
 const importModules = [
@@ -111,7 +115,7 @@ const importMethods = [
 ]
 
 export function DataImportScreen() {
-  const { data, updateData } = useOnboarding()
+  const { data, updateData, setCurrentStep } = useOnboarding()
   const [selectedModules, setSelectedModules] = useState<string[]>(data.dataImport.selectedModules || [])
   const [importMethod, setImportMethod] = useState(data.dataImport.importMethod || "")
 
@@ -127,6 +131,12 @@ export function DataImportScreen() {
     updateData("dataImport", { importMethod: method })
   }
 
+  const handleSkipImport = () => {
+    // Mark data import as skipped and go to completion
+    updateData("dataImport", { skipped: true })
+    setCurrentStep(10) // Navigate to completion screen
+  }
+
   // Only show this screen if user needs import
   if (!data.dataImport.needsImport) {
     return null
@@ -140,6 +150,49 @@ export function DataImportScreen() {
       </div>
 
       <div className="space-y-8">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              Take Your Time - No Pressure!
+            </CardTitle>
+            <CardDescription>Remember: You can always come back to this later</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-blue-800 mb-2">Flexible Options for Busy Business Owners</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-700">
+                    <div>
+                      <p className="font-medium mb-1">✓ Select just a few modules now</p>
+                      <p className="text-xs">You can add more data types later</p>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">✓ Download templates to work offline</p>
+                      <p className="text-xs">Prepare data during quiet periods</p>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">✓ Upload partial data</p>
+                      <p className="text-xs">Start with customers, add jobs later</p>
+                    </div>
+                    <div>
+                      <p className="font-medium mb-1">✓ Skip entirely and return anytime</p>
+                      <p className="text-xs">Access data import for each section later</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3 text-sm">
+              <Button variant="ghost" size="sm" className="text-gray-600" onClick={handleSkipImport}>
+                Skip & Import Later
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Select Data to Transfer</CardTitle>
@@ -173,6 +226,32 @@ export function DataImportScreen() {
             </div>
           </CardContent>
         </Card>
+
+        {selectedModules.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Download Templates</CardTitle>
+              <CardDescription>Get templates for your selected data types</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-3">
+                <p className="text-sm text-blue-700">
+                  <strong>Only work on what you need:</strong> You don't have to fill out templates for all data types - 
+                  just the ones you actually want to transfer. Skip the rest!
+                </p>
+              </div>
+              <div className="flex gap-3 text-sm">
+                <Button variant="outline" size="sm" className="flex items-center gap-2">
+                  <Download className="w-4 h-4" />
+                  Download Selected Templates ({selectedModules.length})
+                </Button>
+                <Button variant="ghost" size="sm" className="text-gray-600" onClick={handleSkipImport}>
+                  Skip & Import Later
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {selectedModules.length > 0 && (
           <Card>

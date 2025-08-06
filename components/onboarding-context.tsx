@@ -3,6 +3,13 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 
 interface OnboardingData {
+  registration?: {
+    name: string
+    email: string
+    companyName: string
+    mobileNumber: string
+    countryCode: string
+  }
   companyOverview: {
     businessType: string
     companySize: string
@@ -182,9 +189,28 @@ const electricalMaintenanceDashboards = [
   "PPM",
 ]
 
-export function OnboardingProvider({ children }: { children: ReactNode }) {
+export function OnboardingProvider({ 
+  children, 
+  initialRegistrationData 
+}: { 
+  children: ReactNode
+  initialRegistrationData?: {
+    name: string
+    email: string
+    companyName: string
+    mobileNumber: string
+    countryCode: string
+  }
+}) {
   const [currentStep, setCurrentStep] = useState(1)
   const [data, setData] = useState<OnboardingData>({
+    registration: initialRegistrationData || {
+      name: "",
+      email: "",
+      companyName: "",
+      mobileNumber: "",
+      countryCode: "+44"
+    },
     companyOverview: {
       businessType: "Limited Company", // Default for UK Electrical Company
       companySize: "3-8 employees", // Default for UK Electrical Company
@@ -211,7 +237,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       selectedForms: [],
       selectedDashboards: [],
     },
-    teamRoles: [],
+    teamRoles: initialRegistrationData ? [{
+      fullName: initialRegistrationData.name,
+      role: "Project Manager",
+      email: initialRegistrationData.email,
+      phoneNumber: initialRegistrationData.countryCode + " " + initialRegistrationData.mobileNumber
+    }] : [],
     businessInformation: {
       businessVolumes: {
         numberOfCustomers: "",

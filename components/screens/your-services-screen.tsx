@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
+import { Eye } from "lucide-react"
 import { useOnboarding } from '@/components/onboarding-context'
 import { useState } from 'react'
 
@@ -69,6 +70,26 @@ export default function YourServicesScreen() {
     data.businessInformation.workTypes || []
   )
   const [contractTypes, setContractTypes] = useState<string[]>([])
+  const [selectedForms, setSelectedForms] = useState<string[]>(() => {
+    if (data.industryConfiguration?.selectedForms) {
+      return data.industryConfiguration.selectedForms
+    }
+    // If Electrical Maintenance is already selected, default to all forms
+    if (data.industryConfiguration?.selectedIndustries?.includes("Electrical Maintenance")) {
+      return electricalMaintenanceForms
+    }
+    return []
+  })
+  const [selectedDashboards, setSelectedDashboards] = useState<string[]>(() => {
+    if (data.industryConfiguration?.selectedDashboards) {
+      return data.industryConfiguration.selectedDashboards
+    }
+    // If Electrical Maintenance is already selected, default to all dashboards
+    if (data.industryConfiguration?.selectedIndustries?.includes("Electrical Maintenance")) {
+      return electricalMaintenanceDashboards
+    }
+    return []
+  })
 
   const handleIndustryChange = (industry: string, checked: boolean) => {
     const updated = checked 
@@ -76,10 +97,23 @@ export default function YourServicesScreen() {
       : selectedIndustries.filter(i => i !== industry)
     
     setSelectedIndustries(updated)
-    updateData('industryConfiguration', { 
-      ...data.industryConfiguration,
-      selectedIndustries: updated 
-    })
+    
+    // If Electrical Maintenance is selected, initialize forms and dashboards to all items
+    if (industry === "Electrical Maintenance" && checked) {
+      setSelectedForms(electricalMaintenanceForms)
+      setSelectedDashboards(electricalMaintenanceDashboards)
+      updateData('industryConfiguration', { 
+        ...data.industryConfiguration,
+        selectedIndustries: updated,
+        selectedForms: electricalMaintenanceForms,
+        selectedDashboards: electricalMaintenanceDashboards
+      })
+    } else {
+      updateData('industryConfiguration', { 
+        ...data.industryConfiguration,
+        selectedIndustries: updated 
+      })
+    }
   }
 
   const handleWorkTypeChange = (workType: string, checked: boolean) => {
@@ -100,6 +134,35 @@ export default function YourServicesScreen() {
       : contractTypes.filter(t => t !== type)
     
     setContractTypes(updated)
+  }
+
+  const handleFormChange = (form: string, checked: boolean) => {
+    const updated = checked
+      ? [...selectedForms, form]
+      : selectedForms.filter(f => f !== form)
+    
+    setSelectedForms(updated)
+    updateData('industryConfiguration', { 
+      ...data.industryConfiguration,
+      selectedForms: updated 
+    })
+  }
+
+  const handleDashboardChange = (dashboard: string, checked: boolean) => {
+    const updated = checked
+      ? [...selectedDashboards, dashboard]
+      : selectedDashboards.filter(d => d !== dashboard)
+    
+    setSelectedDashboards(updated)
+    updateData('industryConfiguration', { 
+      ...data.industryConfiguration,
+      selectedDashboards: updated 
+    })
+  }
+
+  const handlePreview = (type: 'form' | 'dashboard', item: string) => {
+    // For now, we'll show an alert. In a real app, this would open a preview modal
+    alert(`Preview ${type}: ${item}\n\nThis would show a preview of the ${type} template.`)
   }
 
   // Show work type specific forms based on selections
@@ -155,32 +218,101 @@ export default function YourServicesScreen() {
           </Card>
         )}
 
-        {/* Electrical Maintenance Forms and Dashboards */}
+        {/* Electrical Maintenance Forms */}
         {selectedIndustries.includes("Electrical Maintenance") && (
           <Card>
             <CardHeader>
-              <CardTitle>Electrical Maintenance - Forms and Dashboards</CardTitle>
+              <CardTitle>Electrical Maintenance - Forms</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-green-600 font-bold text-lg">✓</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-green-800 mb-1">Free Industry-Standard Forms Included</h4>
+                    <p className="text-sm text-green-700 leading-relaxed">
+                      As part of your onboarding, we're providing these professionally designed electrical maintenance forms at no extra cost. 
+                      These templates comply with industry standards and will save you hours of setup time. Simply uncheck any forms you don't need.
+                    </p>
+                  </div>
+                </div>
+              </div>
               <div>
-                <Label>Would you like us to set up the below standard forms for you now? (You can always create your own later)</Label>
+                <p className="text-sm text-muted-foreground mt-1 mb-3">All forms are pre-selected. Uncheck any you don't need.</p>
                 <div className="grid grid-cols-1 gap-3 mt-2">
                   {electricalMaintenanceForms.map((form) => (
-                    <div key={form} className="flex items-center space-x-2">
-                      <Checkbox id={`form-${form}`} />
-                      <Label htmlFor={`form-${form}`} className="text-sm">{form}</Label>
+                    <div key={form} className="flex items-center justify-between space-x-2 p-2 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <Checkbox 
+                          id={`form-${form}`} 
+                          checked={selectedForms.includes(form)}
+                          onCheckedChange={(checked) => handleFormChange(form, checked as boolean)}
+                        />
+                        <Label htmlFor={`form-${form}`} className="text-sm cursor-pointer flex-1">{form}</Label>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handlePreview('form', form)}
+                        className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </Button>
                     </div>
                   ))}
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        )}
 
-              <div className="mt-6">
-                <Label>Would you like us to set up the below standard dashboard views for you now? (You can always create your own later)</Label>
+        {/* Electrical Maintenance Dashboards */}
+        {selectedIndustries.includes("Electrical Maintenance") && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Electrical Maintenance - Dashboards</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-600 font-bold text-lg">📊</span>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-blue-800 mb-1">Complimentary Dashboard Views</h4>
+                    <p className="text-sm text-blue-700 leading-relaxed">
+                      Get instant business insights with these pre-built dashboard views, included free with your onboarding. 
+                      These intelligent dashboards will help you track compliance, monitor performance, and manage your workflow efficiently. 
+                      Uncheck any dashboards you don't require.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground mt-1 mb-3">All dashboards are pre-selected. Uncheck any you don't need.</p>
                 <div className="grid grid-cols-1 gap-3 mt-2">
                   {electricalMaintenanceDashboards.map((dashboard) => (
-                    <div key={dashboard} className="flex items-center space-x-2">
-                      <Checkbox id={`dashboard-${dashboard}`} />
-                      <Label htmlFor={`dashboard-${dashboard}`} className="text-sm">{dashboard}</Label>
+                    <div key={dashboard} className="flex items-center justify-between space-x-2 p-2 rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <Checkbox 
+                          id={`dashboard-${dashboard}`} 
+                          checked={selectedDashboards.includes(dashboard)}
+                          onCheckedChange={(checked) => handleDashboardChange(dashboard, checked as boolean)}
+                        />
+                        <Label htmlFor={`dashboard-${dashboard}`} className="text-sm cursor-pointer flex-1">{dashboard}</Label>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handlePreview('dashboard', dashboard)}
+                        className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
+                      >
+                        <Eye className="w-3 h-3" />
+                        Preview
+                      </Button>
                     </div>
                   ))}
                 </div>

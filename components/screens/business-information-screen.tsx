@@ -409,7 +409,7 @@ export function BusinessInformationScreen() {
         </Card> */}
 
         {/* Additional Information */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Anything Else to Share?</CardTitle>
           </CardHeader>
@@ -425,7 +425,7 @@ export function BusinessInformationScreen() {
               />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )

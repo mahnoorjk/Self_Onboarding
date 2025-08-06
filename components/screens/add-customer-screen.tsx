@@ -164,6 +164,7 @@ export function AddCustomerScreen({
     contactFirstName: "",
     contactLastName: "",
     contactEmail: "",
+    autoGenerateSite: true,
   })
 
   // Refs for guide targeting
@@ -393,13 +394,13 @@ export function AddCustomerScreen({
     setShowWelcomeDialog(false) // Also close welcome dialog if open
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSave = () => {
     // Simulate saving customer
-    console.log("Customer saved!")
+    console.log("Customer saved!", formData)
     onCustomerSaveSuccess()
     setShowCongratulations(true)
 
@@ -709,7 +710,12 @@ export function AddCustomerScreen({
 
               {/* Auto Generate Site Checkbox */}
               <div className="flex items-center space-x-2">
-                <Checkbox id="auto-generate-site" className="text-teal-600" />
+                <Checkbox 
+                  id="auto-generate-site" 
+                  className="text-teal-600" 
+                  checked={formData.autoGenerateSite}
+                  onCheckedChange={(checked) => handleInputChange("autoGenerateSite", checked as boolean)}
+                />
                 <Label htmlFor="auto-generate-site" className="text-sm text-gray-700">
                   Auto generate a Site for this customer?
                 </Label>

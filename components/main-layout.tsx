@@ -4,6 +4,7 @@ import { useState } from "react"
 import { OnboardingProvider } from "./onboarding-context"
 import { OnboardingFlow } from "./onboarding-flow"
 import { TutorialsVideosScreen } from "./screens/tutorials-videos-screen"
+import { RegistrationScreen } from "./screens/registration-screen"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -39,6 +40,7 @@ import { DashboardMainScreen } from "./screens/dashboard-main-screen"
 import { AddCustomerScreen } from "./screens/add-customer-screen"
 import { ReportsScreen } from "./screens/reports-screen"
 import { LiveChatScreen } from "./screens/live-chat-screen"
+import { MarketplaceScreen } from "./screens/marketplace-screen"
 import { ThirtyDayOnboardingSection } from "./thirty-day-onboarding-section"
 
 const dashboardSubmenu = ["Main", "Key Metric Dashboard"]
@@ -64,14 +66,18 @@ const bottomItems = [
 ]
 
 export function MainLayout() {
+  const [isRegistered, setIsRegistered] = useState(false)
+  const [registrationData, setRegistrationData] = useState<any>(null)
   const [activeTab, setActiveTab] = useState<"wizard" | "tutorials">("wizard")
   const [expandedItems, setExpandedItems] = useState<string[]>(["Dashboard"])
   const [currentScreen, setCurrentScreen] = useState<
-    "dashboard" | "log-job" | "wizard" | "tutorials" | "add-customer" | "reports"
+    "dashboard" | "log-job" | "wizard" | "tutorials" | "add-customer" | "reports" | "marketplace"
   >("dashboard")
   const [selectedDashboardItem, setSelectedDashboardItem] = useState("Main")
   const [isLoggingJobCompleted, setIsLoggingJobCompleted] = useState(false)
   const [isCreatingCustomerCompleted, setIsCreatingCustomerCompleted] = useState(false)
+  const [isCustomersSectionUnlocked, setIsCustomersSectionUnlocked] = useState(false)
+  const [isQuotesSectionUnlocked, setIsQuotesSectionUnlocked] = useState(false)
   const [isInitialOnboardingCompleted, setIsInitialOnboardingCompleted] = useState(false)
   const [isLiveChatOpen, setIsLiveChatOpen] = useState(false)
   const [isLiveChatMinimized, setIsLiveChatMinimized] = useState(false)
@@ -79,16 +85,36 @@ export function MainLayout() {
   const [showLockedDialog, setShowLockedDialog] = useState(false)
   
   // Mock work-in-progress data for demonstration
-  const [workInProgressData] = useState({
-    hasWIPJobs: true,
-    totalJobs: 3,
-    counts: {
-      inProgress: 2,
-      scheduled: 1,
-      onHold: 0,
-      awaitingParts: 0
-    }
-  })
+  // Work in Progress Data - should be provided by actual data source
+  // Set to null/undefined when no real data is available
+  const [workInProgressData] = useState(null)
+  
+  // Example of how real data would look when provided:
+  // const [workInProgressData] = useState({
+  //   hasWIPJobs: true,  // Set based on whether user actually has jobs
+  //   totalJobs: actualJobCount,
+  //   counts: {
+  //     inProgress: actualInProgressCount,
+  //     scheduled: actualScheduledCount,
+  //     onHold: actualOnHoldCount,
+  //     awaitingParts: actualAwaitingPartsCount
+  //   },
+  //   customers: {
+  //     total: actualCustomerCount,
+  //     withSites: actualCustomersWithSitesCount,
+  //     withoutSites: actualCustomersWithoutSitesCount
+  //   },
+  //   quotes: {
+  //     total: actualQuotesCount,
+  //     pending: actualPendingQuotesCount,
+  //     expired: actualExpiredQuotesCount
+  //   },
+  //   invoices: {
+  //     total: actualInvoicesCount,
+  //     pending: actualPendingInvoicesCount,
+  //     overdue: actualOverdueInvoicesCount
+  //   }
+  // })
   
   // In a real application, you would determine onboarding completion like this:
   // const isOnboardingComplete = checkOnboardingCompletion(); 
@@ -97,6 +123,11 @@ export function MainLayout() {
 
   const toggleExpanded = (item: string) => {
     setExpandedItems((prev) => (prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]))
+  }
+
+  const handleRegistrationComplete = (userData: any) => {
+    setRegistrationData(userData)
+    setIsRegistered(true)
   }
 
   const handleLockedSectionClick = () => {
@@ -144,6 +175,22 @@ export function MainLayout() {
 
   const handleCustomerSaveSuccess = () => {
     setIsCreatingCustomerCompleted(true)
+    setIsCustomersSectionUnlocked(true)
+  }
+
+  const handleQuoteTaskCompleted = () => {
+    setIsQuotesSectionUnlocked(true)
+  }
+
+  // Function to check if a section should be unlocked
+  const isSectionUnlocked = (sectionLabel: string) => {
+    if (sectionLabel === "Customers") {
+      return isCustomersSectionUnlocked
+    }
+    if (sectionLabel === "Quotes") {
+      return isQuotesSectionUnlocked
+    }
+    return isOnboardingComplete
   }
 
   const handleNavigateToAddCustomerFromTutorials = () => {
@@ -159,6 +206,10 @@ export function MainLayout() {
     // Add logic for other report sub-items if needed
   }
 
+  const handleMarketplaceClick = () => {
+    setCurrentScreen("marketplace")
+  }
+
   const handleLiveChatClick = () => {
     setIsLiveChatOpen(true)
     setIsLiveChatMinimized(false)
@@ -171,6 +222,11 @@ export function MainLayout() {
 
   const handleToggleLiveChatMinimize = () => {
     setIsLiveChatMinimized(!isLiveChatMinimized)
+  }
+
+  // Show registration screen if user hasn't registered yet
+  if (!isRegistered) {
+    return <RegistrationScreen onBeginTrial={handleRegistrationComplete} />
   }
 
   return (
@@ -307,6 +363,9 @@ export function MainLayout() {
                     isLoggingJobCompleted={isLoggingJobCompleted}
                     isCreatingCustomerCompleted={isCreatingCustomerCompleted}
                     isInitialOnboardingCompleted={isInitialOnboardingCompleted}
+                    onNavigateToAddCustomer={handleAddCustomerClick}
+                    onCustomerSaveSuccess={handleCustomerSaveSuccess}
+                    onQuoteTaskCompleted={handleQuoteTaskCompleted}
                     workInProgressData={workInProgressData}
                   />
                 </div>
@@ -364,7 +423,15 @@ export function MainLayout() {
                 <Button
                   variant="ghost"
                   className="w-full justify-between text-left text-slate-200 hover:text-white hover:bg-slate-600 h-9 text-sm"
-                  onClick={() => isOnboardingComplete ? (item.hasSubmenu && toggleExpanded(item.label)) : handleLockedSectionClick()}
+                  onClick={() => {
+                    if (!isSectionUnlocked(item.label)) {
+                      handleLockedSectionClick()
+                    } else if (item.label === "Marketplace") {
+                      handleMarketplaceClick()
+                    } else if (item.hasSubmenu) {
+                      toggleExpanded(item.label)
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <item.icon className="w-4 h-4" />
@@ -376,8 +443,8 @@ export function MainLayout() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    {!isOnboardingComplete && <Lock className="w-3 h-3" />}
-                    {isOnboardingComplete && item.hasSubmenu &&
+                    {!isSectionUnlocked(item.label) && <Lock className="w-3 h-3" />}
+                    {isSectionUnlocked(item.label) && item.hasSubmenu &&
                       (expandedItems.includes(item.label) ? (
                         <ChevronDown className="w-4 h-4" />
                       ) : (
@@ -414,7 +481,7 @@ export function MainLayout() {
                 )}
 
                 {/* Add Customers submenu */}
-                {isOnboardingComplete && item.label === "Customers" && expandedItems.includes("Customers") && (
+                {isSectionUnlocked("Customers") && item.label === "Customers" && expandedItems.includes("Customers") && (
                   <div className="ml-6 mt-1 space-y-1">
                     <Button
                       variant="ghost"
@@ -549,10 +616,13 @@ export function MainLayout() {
 
         {/* Content */}
         <main className="flex-1 overflow-auto">
-          {currentScreen === "add-customer" ? (
+          {currentScreen === "marketplace" ? (
+            <MarketplaceScreen />
+          ) : currentScreen === "add-customer" ? (
             <AddCustomerScreen
               onCustomerSaveSuccess={handleCustomerSaveSuccess}
               onNavigateBackToTutorials={handleNavigateBackToTutorials}
+              showGuide={true}
             />
           ) : currentScreen === "tutorials" ? (
             <TutorialsVideosScreen
@@ -571,7 +641,7 @@ export function MainLayout() {
           ) : currentScreen === "reports" ? (
             <ReportsScreen />
           ) : (
-            <OnboardingProvider>
+            <OnboardingProvider initialRegistrationData={registrationData}>
               <OnboardingFlow 
                 isLoggingJobCompleted={isLoggingJobCompleted}
                 isCreatingCustomerCompleted={isCreatingCustomerCompleted}

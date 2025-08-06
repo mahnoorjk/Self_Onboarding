@@ -5,7 +5,7 @@ import { useOnboarding } from "../onboarding-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Database, FileText, Users, Calendar } from "lucide-react"
+import { CheckCircle, XCircle, Database, FileText, Users, Calendar, Play, Clock, Download } from "lucide-react"
 
 const importModules = [
   {
@@ -118,6 +118,51 @@ export function DataImportOverviewScreen() {
         {needsImport && (
           <Card>
             <CardHeader>
+              <CardTitle>📹 Watch: Quick Data Transfer Guide</CardTitle>
+              <CardDescription>Simple 3-minute video showing exactly how to prepare your data</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="relative">
+                    <div className="w-32 h-20 bg-blue-600 rounded-lg flex items-center justify-center cursor-pointer hover:bg-blue-700 transition-colors">
+                      <Play className="w-8 h-8 text-white" />
+                    </div>
+                    <Badge className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1">
+                      3 min
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <h4 className="font-semibold text-blue-800 mb-2">
+                    "Data Transfer Made Simple"
+                  </h4>
+                  <p className="text-sm text-blue-700 mb-4">
+                    Watch our step-by-step guide that shows you exactly how to export data from common software and prepare it for JobLogic.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs text-blue-700">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Export from Excel/CSV</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Clean up your data</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3 h-3" />
+                      <span>Upload to JobLogic</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {needsImport && (
+          <Card>
+            <CardHeader>
               <CardTitle>Historical Data Transfer</CardTitle>
               <CardDescription>Important: This requires manual work and may take time</CardDescription>
             </CardHeader>
@@ -147,7 +192,7 @@ export function DataImportOverviewScreen() {
                       Need to access old job records for warranty claims, safety certificates, or compliance audits
                     </p>
                   </div>
-                  <div className="border rounded-lg p-4">
+                  {/* <div className="border rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-4 h-4 text-green-600" />
                       <span className="font-medium text-gray-900">Large Customer Base</span>
@@ -155,7 +200,7 @@ export function DataImportOverviewScreen() {
                     <p className="text-sm text-gray-600">
                       You have hundreds of customers with detailed service histories
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
