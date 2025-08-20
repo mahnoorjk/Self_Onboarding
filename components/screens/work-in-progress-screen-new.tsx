@@ -98,113 +98,68 @@ export function WorkInProgressScreen() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="container mx-auto max-w-6xl">
       {/* Enhanced Professional Header */}
-      <div className="text-center space-y-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-200 p-8">
-        <div className="flex items-center justify-center space-x-3 mb-4">
-          <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center">
-            <span className="text-white font-bold text-xl">3</span>
+      <div className="mb-10 text-center">
+        <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-200 p-8">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-bold text-xl">4</span>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900">What work do you have right now?</h1>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Add Your Work</h1>
-        </div>
-        <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
-          We'll help you bring your work into JobLogic and get started right away with 
-          your actual jobs and workflows.
-        </p>
-        <div className="flex items-center justify-center space-x-2 text-sm text-teal-700 bg-teal-100 rounded-full px-4 py-2 inline-flex">
-          <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
-          <span>This imports your real work into JobLogic</span>
+          <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+            We'll use this to set up some practice scenarios for you, so you can try JobLogic 
+            with work that feels familiar and realistic.
+          </p>
+          <div className="flex items-center justify-center space-x-2 text-sm text-teal-700 bg-teal-100 rounded-full px-4 py-2 inline-flex mt-4">
+            <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+            <span>This creates realistic training scenarios</span>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-8">
-        {/* <div className="max-w-3xl mx-auto space-y-6"> */}
-        <div className="max-w-6xl mx-auto space-y-6">
-        {/* Enhanced Yes/No Question */}
-        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="pt-8 pb-6">
-            <div className="text-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Do you have any current work - jobs, quotes, or invoices?</h3>
-              <p className="text-gray-600">Choose the option that best describes your current situation</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {/* Yes Option */}
-              <div 
-                className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                  hasWIPJobs 
-                    ? 'border-teal-500 bg-teal-50 shadow-md ring-2 ring-teal-100' 
-                    : 'border-gray-200 hover:border-teal-300 hover:bg-teal-25'
-                }`}
-                onClick={() => handleWIPToggle(true)}
-              >
-                <div className="flex items-start space-x-4">
+      <div className="max-w-3xl mx-auto space-y-6">
+        {/* Simple Yes/No Question */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Do you have any jobs happening this week?</h3>
+              
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => handleWIPToggle(true)}>
                   <input 
                     type="radio" 
                     id="hasJobs" 
                     name="currentWork" 
                     checked={hasWIPJobs} 
                     onChange={() => handleWIPToggle(true)}
-                    className="w-5 h-5 text-teal-600 mt-1 focus:ring-teal-500" 
+                    className="w-4 h-4 text-blue-600" 
                   />
-                  <div className="flex-1">
-                    <Label htmlFor="hasJobs" className="cursor-pointer">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
-                          <span className="text-teal-600 font-semibold text-sm">✓</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">Yes, I have current work</div>
-                      </div>
-                      <div className="text-sm text-gray-600 leading-relaxed">
-                        I'll bring my actual work into JobLogic and practice with real scenarios
-                      </div>
-                    </Label>
-                  </div>
+                  <Label htmlFor="hasJobs" className="cursor-pointer">
+                    <div>
+                      <div className="font-medium">Yes, I have jobs running</div>
+                      <div className="text-sm text-gray-500">I'll get real practice with my actual work</div>
+                    </div>
+                  </Label>
                 </div>
-                {hasWIPJobs && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </div>
-                )}
-              </div>
-
-              {/* No Option */}
-              <div 
-                className={`relative p-6 border-2 rounded-xl cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                  !hasWIPJobs 
-                    ? 'border-blue-500 bg-blue-50 shadow-md ring-2 ring-blue-100' 
-                    : 'border-gray-200 hover:border-blue-300 hover:bg-blue-25'
-                }`}
-                onClick={() => handleWIPToggle(false)}
-              >
-                <div className="flex items-start space-x-4">
+                
+                <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => handleWIPToggle(false)}>
                   <input 
                     type="radio" 
                     id="noJobs" 
                     name="currentWork" 
                     checked={!hasWIPJobs} 
                     onChange={() => handleWIPToggle(false)}
-                    className="w-5 h-5 text-blue-600 mt-1 focus:ring-blue-500" 
+                    className="w-4 h-4 text-blue-600" 
                   />
-                  <div className="flex-1">
-                    <Label htmlFor="noJobs" className="cursor-pointer">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <span className="text-blue-600 font-semibold text-sm">○</span>
-                        </div>
-                        <div className="font-semibold text-gray-900">No current work right now</div>
-                      </div>
-                      <div className="text-sm text-gray-600 leading-relaxed">
-                        I'll start with demo examples to learn how JobLogic works
-                      </div>
-                    </Label>
-                  </div>
+                  <Label htmlFor="noJobs" className="cursor-pointer">
+                    <div>
+                      <div className="font-medium">No active jobs right now</div>
+                      <div className="text-sm text-gray-500">I'll start with demo examples</div>
+                    </div>
+                  </Label>
                 </div>
-                {!hasWIPJobs && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-white" />
-                  </div>
-                )}
               </div>
             </div>
           </CardContent>
@@ -272,7 +227,7 @@ export function WorkInProgressScreen() {
               
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-700">
-                  💡 Don't worry about being exact - we just want to help you get started with your real work
+                  💡 Don't worry about being exact - we just want to make the practice realistic for you
                 </p>
               </div>
             </CardContent>
@@ -288,15 +243,14 @@ export function WorkInProgressScreen() {
                 <h4 className="font-medium text-green-800">What happens next?</h4>
                 <p className="text-sm text-green-700 mt-1">
                   {hasWIPJobs 
-                    ? "We'll help you add your real work into JobLogic so you can start using it right away."
-                    : "We'll walk you through adding sample work so you can see how everything works."
+                    ? "We'll help you add a real job into JobLogic so you can see how it works with your actual work."
+                    : "We'll walk you through adding a sample job so you can see how everything works."
                   }
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        </div>
       </div>
     </div>
   )

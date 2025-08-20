@@ -7,11 +7,6 @@ import { NavigationButtons } from "./navigation-buttons"
 import { AboutYourBusinessScreen } from "./screens/about-your-business-screen"
 import YourServicesScreen from "./screens/your-services-screen"
 import { BusinessInformationScreen } from "./screens/business-information-screen"
-import { DataImportOverviewScreen } from "./screens/data-import-overview-screen"
-import { DataImportScreen } from "./screens/data-import-screen"
-import { SoftwareCredentialsScreen } from "./screens/software-credentials-screen"
-import { UploadDataFilesScreen } from "./screens/upload-data-files-screen"
-import { JoblogicTemplatesScreen } from "./screens/joblogic-templates-screen"
 import { WorkInProgressScreen } from "./screens/work-in-progress-screen"
 import { CompletionScreen } from "./screens/completion-screen"
 import { TutorialsVideosScreen } from "./screens/tutorials-videos-screen"
@@ -21,14 +16,28 @@ interface OnboardingFlowProps {
   isCreatingCustomerCompleted?: boolean
   onOnboardingCompletion?: () => void
   onNavigateToTutorials?: () => void
+  setShowThirtyDayModal?: (show: boolean) => void
+  onNavigateToAddCustomer?: (showGuide?: boolean) => void
+  onNavigateToLogJob?: (showGuide?: boolean) => void
+  onNavigateToLogQuote?: (showGuide?: boolean) => void
+  onNavigateToReports?: (showGuide?: boolean) => void
+  onTaskCompleted?: (taskId: string) => void
+  completedTasks?: string[]
 }
 
 export function OnboardingFlow({ 
   isLoggingJobCompleted = false, 
-  isCreatingCustomerCompleted = false,
-  onOnboardingCompletion,
-  onNavigateToTutorials
-}: OnboardingFlowProps = {}) {
+  isCreatingCustomerCompleted = false, 
+  onOnboardingCompletion, 
+  onNavigateToTutorials,
+  setShowThirtyDayModal,
+  onNavigateToAddCustomer,
+  onNavigateToLogJob,
+  onNavigateToLogQuote,
+  onNavigateToReports,
+  onTaskCompleted,
+  completedTasks = []
+}: OnboardingFlowProps) { 
   const { currentStep } = useOnboarding()
 
   const renderScreen = () => {
@@ -38,30 +47,25 @@ export function OnboardingFlow({
       case 2:
         return <YourServicesScreen />
       case 3:
-        return <BusinessInformationScreen />
-      case 4:
         return <WorkInProgressScreen />
-      case 5:
-        return <DataImportOverviewScreen />
-      case 6:
-        return <DataImportScreen />
-      case 7:
-        return <SoftwareCredentialsScreen />
-      case 8:
-        return <UploadDataFilesScreen />
-      case 9:
-        return <JoblogicTemplatesScreen />
-      case 10:
+      case 4:
         return <CompletionScreen 
           onOnboardingCompletion={onOnboardingCompletion} 
           onNavigateToTutorials={onNavigateToTutorials}
+          setShowOnboardingModal={setShowThirtyDayModal}
+          onNavigateToAddCustomer={onNavigateToAddCustomer}
+          onNavigateToLogJob={onNavigateToLogJob}
+          onNavigateToLogQuote={onNavigateToLogQuote}
+          onNavigateToReports={onNavigateToReports}
+          onTaskCompleted={onTaskCompleted}
+          completedTasks={completedTasks}
         />
-      case 11:
+      case 5:
         return <TutorialsVideosScreen 
           isLoggingJobCompleted={isLoggingJobCompleted}
           isCreatingCustomerCompleted={isCreatingCustomerCompleted}
-          onNavigateToLogJob={() => {/* Could implement navigation to job logging screen if needed */}}
-          onNavigateToAddCustomer={() => {/* Could implement navigation to customer creation screen if needed */}}
+          onNavigateToLogJob={onNavigateToLogJob || (() => {})}
+          onNavigateToAddCustomer={onNavigateToAddCustomer || (() => {})}
         />
       default:
         return <AboutYourBusinessScreen />
@@ -70,7 +74,7 @@ export function OnboardingFlow({
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
-      <OnboardingHeader />
+      {/* <OnboardingHeader /> */}
       <ProgressBar />
       <main className="px-4 py-8 w-full pb-24">{renderScreen()}</main>
       <NavigationButtons />

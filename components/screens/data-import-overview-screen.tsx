@@ -236,7 +236,7 @@ export function DataImportOverviewScreen() {
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <Calendar className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                     <h4 className="font-medium text-blue-800 mb-1">Current Jobs</h4>
-                    <p className="text-xs text-blue-700">We'll show you how to add jobs from your Work in Progress list</p>
+                    <p className="text-xs text-blue-700">We'll show you how to add jobs from your Your Current Workload list</p>
                   </div>
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <Users className="w-8 h-8 text-green-600 mx-auto mb-2" />

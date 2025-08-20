@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ import {
   X,
   Search,
   ChevronDown,
+  ChevronUp,
   HelpCircle,
   Minus,
   CheckCircle,
@@ -36,6 +38,7 @@ import {
   Target,
   Lightbulb,
   RotateCcw,
+  Info,
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -128,54 +131,31 @@ const guideSteps: GuideStep[] = [
     inputField: "description",
   },
   {
-    id: "job-details-tab",
-    title: "Step 5: Review Job Details",
+    id: "job-kpis-priority",
+    title: "Step 5: Set Job Priority",
     description:
-      "Great work! You've filled in the basic information. Let's move to the Job Details tab to review what we've entered.",
-    target: "job-details-tab",
-    position: "bottom",
-    tab: "job-details",
-  },
-  {
-    id: "job-kpis-tab",
-    title: "Step 6: Set Job KPIs",
-    description:
-      "Now let's configure key performance indicators. Click on the Job KPIs tab to set priority levels for this job.",
-    target: "job-kpis-tab",
-    position: "bottom",
-    tab: "job-kpis",
-  },
-  {
-    id: "priority-selection",
-    title: "Step 7: Set Priority Level",
-    description: "Please select a priority level for this job. This helps with scheduling and resource allocation.",
+      "Great work! Now let's set the priority level for this job. Click on the Job KPIs tab and select a priority level. This helps with scheduling and resource allocation.",
     target: "priority-select",
     position: "bottom",
     action: "highlight",
+    tab: "job-kpis",
     requiresInput: true,
     inputField: "priority",
   },
   {
-    id: "job-allocation-tab",
-    title: "Step 8: Assign the Job",
-    description: "Excellent! Now let's assign the job to an engineer. Click on the Job Allocation tab.",
-    target: "job-allocation-tab",
-    position: "bottom",
-    tab: "job-allocation",
-  },
-  {
-    id: "engineer-selection",
-    title: "Step 9: Select an Engineer",
-    description: "Please select an engineer to assign this job to. This ensures the right person gets the job.",
+    id: "job-allocation-engineer",
+    title: "Step 6: Assign Engineer",
+    description: "Excellent! Now let's assign the job to an engineer. Click on the Job Allocation tab and select an engineer to assign this job to.",
     target: "engineer-select",
     position: "bottom",
     action: "highlight",
+    tab: "job-allocation",
     requiresInput: true,
     inputField: "engineer",
   },
   {
     id: "save-job",
-    title: "Step 10: Save Your Job",
+    title: "Step 7: Save Your Job",
     description:
       "Perfect! You've completed all the required information. Now click the Save button to create your job. Congratulations on logging your first job!",
     target: "save-button",
@@ -187,7 +167,7 @@ const guideSteps: GuideStep[] = [
 interface LogJobScreenProps {
   onJobSaveSuccess: () => void
   onNavigateBackToTutorials?: () => void
-  showGuide?: boolean
+  showGuide?: boolean // When true, shows simplified version (from completion screen tasks)
 }
 
 export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, showGuide = false }: LogJobScreenProps) {
@@ -223,14 +203,13 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
   const [contactSearch, setContactSearch] = useState("")
   const [loggedWithinPeriod, setLoggedWithinPeriod] = useState("10 Days")
   const [showCongratulations, setShowCongratulations] = useState(false)
+  const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false)
 
   // Guide state
   const [isGuideActive, setIsGuideActive] = useState(false)
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
-  const [showGuideDialog, setShowGuideDialog] = useState(false)
   const [guideOverlayPosition, setGuideOverlayPosition] = useState({ top: 0, left: 0, width: 0, height: 0 })
   const [showStartGuideButton, setShowStartGuideButton] = useState(false) // Controls the button on the screen
-  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false) // Controls the initial welcome dialog
 
   // Refs for guide targeting
   const pageHeaderRef = useRef<HTMLDivElement>(null)
@@ -245,9 +224,9 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
   // Initialize guide when showGuide prop is true (auto-start from tutorials)
   useEffect(() => {
     if (showGuide) {
-      // If coming from tutorials, show the welcome dialog automatically
+      // If coming from tutorials, start the guide automatically
       const timer = setTimeout(() => {
-        setShowWelcomeDialog(true)
+        startGuide()
       }, 500) // Short delay to ensure page is rendered
       return () => clearTimeout(timer) // Cleanup timer on unmount
     } else {
@@ -270,16 +249,14 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
       // Use a longer delay to ensure elements are rendered after tab switch and scrolling
       const highlightTimer = setTimeout(() => {
         updateGuideOverlay(currentStep)
-        setShowGuideDialog(true)
       }, 500) // Increased delay for better rendering and scrolling sync
 
       return () => clearTimeout(highlightTimer)
     } else if (isGuideActive && currentGuideStep >= guideSteps.length) {
       // Guide finished
       setIsGuideActive(false)
-      setShowGuideDialog(false)
     }
-  }, [currentGuideStep, isGuideActive, activeTab])
+  }, [currentGuideStep, isGuideActive, activeTab, priorityLevel, selectedEngineer])
 
   // Add scroll event listener to update overlay positions during tutorial
   useEffect(() => {
@@ -310,11 +287,9 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
   }, [isGuideActive, currentGuideStep, guideSteps])
 
   const startGuide = () => {
-    setShowWelcomeDialog(false) // Close welcome dialog if it was open
     setIsGuideActive(true)
     setCurrentGuideStep(0)
     setShowStartGuideButton(false) // Hide the manual start button on the page
-    setShowGuideDialog(true) // Open the first guide step dialog
   }
 
   const updateGuideOverlay = (step: GuideStep) => {
@@ -385,7 +360,7 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
       case "priority":
         return priorityLevel !== ""
       case "engineer":
-        return selectedEngineer !== ""
+        return assignToEngineer ? selectedEngineer !== "" : true
       default:
         return true
     }
@@ -412,7 +387,6 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
     } else {
       // Guide completed
       setIsGuideActive(false)
-      setShowGuideDialog(false)
     }
   }
 
@@ -431,9 +405,7 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
 
   const handleSkipGuide = () => {
     setIsGuideActive(false)
-    setShowGuideDialog(false)
     setShowStartGuideButton(true) // Show the manual start button on the page if skipped
-    setShowWelcomeDialog(false) // Also close welcome dialog if open
   }
 
   const handleSecondaryTradeAdd = (trade: string) => {
@@ -459,7 +431,662 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
   }
 
   const currentStep = guideSteps[currentGuideStep]
+  
+  // Determine which version to show:
+  // - showGuide=true (activeTab="wizard"): Simplified version (from completion screen tasks)
+  // - showGuide=false/undefined (activeTab="tutorials"): BAU version (from normal navigation)
+  const isSimplifiedVersion = showGuide // When coming from completion screen tasks
 
+  // SIMPLIFIED VERSION: For users coming from completion screen tasks
+  // Shows main fields in one card with additional information in a collapsible section
+  if (isSimplifiedVersion) {
+    return (
+      <div className="h-full bg-white overflow-auto relative">
+        {/* Guide Overlay - Same as BAU version */}
+        {isGuideActive && currentStep?.action === "highlight" && (
+          <>
+            {/* Dark overlay covering entire screen with cutout */}
+            <div
+              className="fixed inset-0 z-40 pointer-events-none"
+              style={{
+                clipPath: `polygon(
+                  0% 0%,
+                  0% 100%,
+                  ${Math.max(0, guideOverlayPosition.left - window.scrollX)}px 100%,
+                  ${Math.max(0, guideOverlayPosition.left - window.scrollX)}px ${Math.max(0, guideOverlayPosition.top - window.scrollY)}px,
+                  ${Math.max(0, guideOverlayPosition.left + guideOverlayPosition.width - window.scrollX)}px ${Math.max(0, guideOverlayPosition.top - window.scrollY)}px,
+                  ${Math.max(0, guideOverlayPosition.left + guideOverlayPosition.width - window.scrollX)}px ${Math.max(0, guideOverlayPosition.top + guideOverlayPosition.height - window.scrollY)}px,
+                  ${Math.max(0, guideOverlayPosition.left - window.scrollX)}px ${Math.max(0, guideOverlayPosition.top + guideOverlayPosition.height - window.scrollY)}px,
+                  ${Math.max(0, guideOverlayPosition.left - window.scrollX)}px 100%,
+                  100% 100%,
+                  100% 0%
+                )`,
+                backgroundColor: "rgba(0, 0, 0, 0.6)",
+              }}
+            />
+            {/* Highlighted element border only - no background */}
+            <div
+              className="fixed border-4 border-teal-500 rounded-lg z-50 pointer-events-none"
+              style={{
+                top: guideOverlayPosition.top - window.scrollY,
+                left: guideOverlayPosition.left - window.scrollX,
+                width: guideOverlayPosition.width,
+                height: guideOverlayPosition.height,
+                boxShadow: "0 0 0 2px rgba(20, 184, 166, 0.3), 0 0 20px rgba(20, 184, 166, 0.5)",
+                animation: "pulse 2s infinite",
+                backgroundColor: "transparent",
+              }}
+            />
+          </>
+        )}
+
+        <div className="p-6">
+          <div className="mb-6" ref={pageHeaderRef}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Create Your First Job</h1>
+                <p className="text-gray-600">Complete the essential fields below to log your job. You can add more details later.</p>
+                {isGuideActive && (
+                  <div className="flex items-center gap-2 text-sm text-teal-600 bg-teal-50 px-4 py-2 rounded-lg border border-teal-200 shadow-sm mt-3">
+                    <Target className="w-4 h-4" />
+                    <span className="font-medium">Tutorial Mode Active</span>
+                    <span className="text-teal-500">•</span>
+                    <span>
+                      Step {currentGuideStep + 1} of {guideSteps.length}
+                    </span>
+                  </div>
+                )}
+              </div>
+              {showStartGuideButton && !isGuideActive && (
+                <Button
+                  onClick={startGuide}
+                  className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2 shadow-lg"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Start Tutorial
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Simplified Main Fields Card */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Target className="w-5 h-5 text-teal-600" />
+                Job Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Customer & Site Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2" ref={customerSelectRef}>
+                  <Label className="flex items-center gap-2">
+                    Customer <span className="text-red-500">*</span>
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </Label>
+                  <div className="relative">
+                    <Select
+                      value={selectedCustomer}
+                      onValueChange={setSelectedCustomer}
+                      open={showCustomerDropdown}
+                      onOpenChange={setShowCustomerDropdown}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Please select an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer} value={customer}>
+                            {customer}
+                          </SelectItem>
+                        ))}
+                        <div className="p-2 text-xs text-gray-500 border-t">Showing top 10 customers</div>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2" ref={siteSelectRef}>
+                  <Label className="flex items-center gap-2">
+                    Site <span className="text-red-500">*</span>
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </Label>
+                  <div className="relative">
+                    <Select
+                      value={selectedSite}
+                      onValueChange={setSelectedSite}
+                      open={showSiteDropdown}
+                      onOpenChange={setShowSiteDropdown}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Please select an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sites.map((site) => (
+                          <SelectItem key={site} value={site}>
+                            {site}
+                          </SelectItem>
+                        ))}
+                        <div className="p-2 text-xs text-gray-500 border-t">Showing top 10 sites</div>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Job Type & Category Row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2" ref={jobTypeSelectRef}>
+                  <Label className="flex items-center gap-2">
+                    Job Type <span className="text-red-500">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Select value={jobType} onValueChange={setJobType}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    Job Category
+                    <HelpCircle className="w-4 h-4 text-gray-400" />
+                  </Label>
+                  <div className="relative">
+                    <Select value={jobCategory} onValueChange={setJobCategory}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {jobCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      size="sm"
+                      className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Trade */}
+              <div className="space-y-2">
+                <Label>Primary Job Trade</Label>
+                <div className="relative">
+                  <Select value={primaryTrade} onValueChange={setPrimaryTrade}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Please select an option..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {primaryTrades.map((trade) => (
+                        <SelectItem key={trade} value={trade}>
+                          {trade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2" ref={descriptionTextareaRef}>
+                <Label className="flex items-center gap-2">
+                  Description <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="min-h-[100px]"
+                  placeholder="Describe the work to be performed..."
+                />
+              </div>
+
+              {/* Priority Level */}
+              <div className="space-y-2" ref={prioritySelectRef}>
+                <Label className="flex items-center gap-2">
+                  Priority Level
+                  <HelpCircle className="w-4 h-4 text-gray-400" />
+                </Label>
+                <div className="relative">
+                  <Select value={priorityLevel} onValueChange={setPriorityLevel}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Please select an option..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priorityLevels.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    size="sm"
+                    className="absolute right-8 top-1/2 transform -translate-y-1/2 bg-green-600 hover:bg-green-700 w-6 h-6 p-0"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Engineer Assignment */}
+              <div className="space-y-4">
+                <Label className="flex items-center gap-2">
+                  Assign To
+                  <HelpCircle className="w-4 h-4 text-gray-400" />
+                </Label>
+                <RadioGroup
+                  value={assignToEngineer ? "engineer" : "team"}
+                  onValueChange={(value) => setAssignToEngineer(value === "engineer")}
+                  className="flex space-x-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="engineer" id="engineer" className="text-teal-600" />
+                    <Label htmlFor="engineer" className="text-teal-600">
+                      Engineer
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="team" id="team" />
+                    <Label htmlFor="team">Engineer Team</Label>
+                  </div>
+                </RadioGroup>
+
+                {assignToEngineer && (
+                  <div ref={engineerSelectRef}>
+                    <Select value={selectedEngineer} onValueChange={setSelectedEngineer}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Please select an option..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {engineers.map((engineer) => (
+                          <SelectItem key={engineer} value={engineer}>
+                            {engineer}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Collapsible Additional Information Section */}
+          <Collapsible open={isAdditionalInfoOpen} onOpenChange={setIsAdditionalInfoOpen}>
+            <Card className="mb-6">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors">
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Info className="w-5 h-5 text-blue-600" />
+                      Additional Information
+                      <Badge variant="secondary" className="text-xs">
+                        Optional
+                      </Badge>
+                    </div>
+                    {isAdditionalInfoOpen ? (
+                      <ChevronUp className="w-5 h-5 text-gray-500" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-500" />
+                    )}
+                  </CardTitle>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Add reference numbers, scheduling details, and other optional job information
+                  </p>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="space-y-6 pt-0">
+                  {/* Secondary Job Trade(s) */}
+                  <div className="space-y-2">
+                    <Label>Secondary Job Trade(s)</Label>
+                    <div className="relative">
+                      <Select onValueChange={(value) => handleSecondaryTradeAdd(value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Please select option(s)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {secondaryTrades.map((trade) => (
+                            <SelectItem key={trade} value={trade}>
+                              {trade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <ChevronDown className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    </div>
+                    {secondaryTradesList.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {secondaryTradesList.map((trade) => (
+                          <Badge key={trade} variant="secondary" className="flex items-center gap-1">
+                            {trade}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="w-4 h-4 p-0 hover:bg-transparent"
+                              onClick={() => handleSecondaryTradeRemove(trade)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Reference Numbers */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Customer Order Number
+                        <HelpCircle className="w-4 h-4 text-gray-400" />
+                      </Label>
+                      <Input value={customerOrderNumber} onChange={(e) => setCustomerOrderNumber(e.target.value)} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Reference Number
+                        <HelpCircle className="w-4 h-4 text-gray-400" />
+                      </Label>
+                      <Input value={referenceNumber} onChange={(e) => setReferenceNumber(e.target.value)} />
+                    </div>
+                  </div>
+
+                  {/* Job Owner & Date Logged */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Job Owner <span className="text-red-500">*</span>
+                        <HelpCircle className="w-4 h-4 text-gray-400" />
+                      </Label>
+                      <div className="relative">
+                        <Input value={jobOwner} onChange={(e) => setJobOwner(e.target.value)} />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 p-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Date Logged <span className="text-red-500">*</span>
+                        <HelpCircle className="w-4 h-4 text-gray-400" />
+                      </Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateLogged ? format(dateLogged, "dd/MM/yyyy HH:mm") : "Select date"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={dateLogged}
+                            onSelect={(date) => date && setDateLogged(date)}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </div>
+
+                  {/* Job References */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Job Ref 1</Label>
+                      <Input value={jobRef1} onChange={(e) => setJobRef1(e.target.value)} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Job Ref 2</Label>
+                      <Select value={jobRef2} onValueChange={setJobRef2}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Please select an option..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ref1">Reference 1</SelectItem>
+                          <SelectItem value="ref2">Reference 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Checkboxes */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="req-approval" checked={reqApproval} onCheckedChange={(checked) => setReqApproval(checked === true)} />
+                      <Label htmlFor="req-approval">Req. Approval</Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="deploy-mobile" checked={deployToMobile} onCheckedChange={(checked) => setDeployToMobile(checked === true)} />
+                      <Label htmlFor="deploy-mobile">Deploy to Mobile</Label>
+                    </div>
+                  </div>
+
+                  {/* Scheduling Dates */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-gray-900">Scheduling</h4>
+                    <div className="space-y-2">
+                      <Label>Preferred Appointment Date</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {preferredDate ? format(preferredDate, "dd/MM/yyyy HH:mm") : "DD/MM/YYYY HH:mm"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar mode="single" selected={preferredDate} onSelect={setPreferredDate} initialFocus />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label>Start Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate ? format(startDate, "dd/MM/yyyy HH:mm") : "Select date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={startDate}
+                              onSelect={(date) => date && setStartDate(date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>End Date</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start text-left font-normal bg-transparent">
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate ? format(endDate, "dd/MM/yyyy HH:mm") : "Select date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={endDate}
+                              onSelect={(date) => date && setEndDate(date)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Footer Actions */}
+          <div className="flex justify-between items-center mt-6 pt-4 border-t">
+            <div className="text-sm text-gray-500">
+              <span className="text-red-500">*</span>Required Fields
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="bg-transparent">
+                Cancel
+              </Button>
+              <Button ref={saveButtonRef} className="bg-green-600 hover:bg-green-700" onClick={handleSave}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Guide Control - Same as BAU version */}
+        {isGuideActive && currentStep && (
+          <div className="fixed bottom-6 right-6 z-[80] bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <Target className="w-4 h-4 text-teal-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900 text-sm">{currentStep.title}</h4>
+                  <Button variant="ghost" size="sm" onClick={handleSkipGuide} className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600">
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+                
+                <p className="text-xs text-gray-600 leading-relaxed mb-3">{currentStep.description}</p>
+                
+                {/* Show validation message if step requires input and validation fails */}
+                {currentStep.requiresInput && !validateCurrentStep(currentStep) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-3">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <HelpCircle className="w-3 h-3" />
+                      <span className="text-xs font-medium">Complete this field to continue</span>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-xs text-gray-500 mb-3">
+                  Step {currentGuideStep + 1} of {guideSteps.length}
+                </div>
+                
+                {/* Progress bar */}
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+                  <div
+                    className="bg-teal-600 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentGuideStep + 1) / guideSteps.length) * 100}%` }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    {currentGuideStep > 0 && (
+                      <Button variant="outline" size="sm" onClick={handlePrevGuideStep} className="h-7 px-3 text-xs">
+                        <ArrowLeft className="w-3 h-3 mr-1" />
+                        Back
+                      </Button>
+                    )}
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={handleNextGuideStep}
+                    className="bg-teal-600 hover:bg-teal-700 h-7 px-3 text-xs"
+                    disabled={currentStep.requiresInput && !validateCurrentStep(currentStep)}
+                  >
+                    {currentGuideStep < guideSteps.length - 1 ? (
+                      <>
+                        Next
+                        <ArrowRight className="w-3 h-3 ml-1" />
+                      </>
+                    ) : (
+                      <>
+                        Finish
+                        <CheckCircle className="w-3 h-3 ml-1" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Congratulations Dialog */}
+        <Dialog open={showCongratulations} onOpenChange={setShowCongratulations}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-center">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <DialogTitle className="text-xl font-bold text-green-600">Congratulations!</DialogTitle>
+              <DialogDescription className="text-lg">You just logged your first job!</DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center mt-4">
+              <Button onClick={handleContinue} className="bg-green-600 hover:bg-green-700">
+                Continue
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
+
+  // BAU VERSION: For normal navigation from left panel
+  // Shows the full tabbed interface with all sections and fields
   return (
     <div className="h-full bg-white overflow-auto relative">
       {/* Guide Overlay - Fixed to avoid CSS conflicts */}
@@ -518,7 +1145,7 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
             </div>
             {showStartGuideButton && !isGuideActive && (
               <Button
-                onClick={() => setShowWelcomeDialog(true)}
+                onClick={startGuide}
                 className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2 shadow-lg"
               >
                 <Lightbulb className="w-4 h-4" />
@@ -1183,138 +1810,73 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
         </div>
       </div>
 
-      {/* Welcome Dialog */}
-      <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Target className="w-6 h-6 text-teal-600" />
-              Ready to Log Your First Job?
-            </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed mt-2">
-              Welcome to the job logging tutorial! We'll guide you through each step of creating your first job entry
-              with interactive tips and helpful guidance.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 my-4">
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Step-by-step interactive guidance</span>
+      {/* Single Unified Guide Control - Bottom Right Corner */}
+      {isGuideActive && currentStep && (
+        <div className="fixed bottom-6 right-6 z-[80] bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <Target className="w-4 h-4 text-teal-600" />
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Visual highlights and helpful tips</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Learn best practices for job management</span>
-            </div>
-          </div>
-          <DialogFooter className="flex gap-3">
-            <Button variant="outline" onClick={handleSkipGuide}>
-              Skip Tutorial
-            </Button>
-            <Button onClick={startGuide} className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" />
-              Start Tutorial
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Guide Dialog - Fixed positioning to ensure visibility */}
-      <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
-        <DialogContent
-          className="sm:max-w-lg z-[70] fixed"
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            maxHeight: "90vh",
-            overflow: "auto",
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <Target className="w-5 h-5 text-teal-600" />
-              {currentStep?.title}
-            </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed mt-2">{currentStep?.description}</DialogDescription>
-          </DialogHeader>
-
-          {/* Show validation message if step requires input and validation fails */}
-          {currentStep?.requiresInput && !validateCurrentStep(currentStep) && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
-              <div className="flex items-center gap-2 text-amber-800">
-                <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">Please complete this step to continue</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-900 text-sm">{currentStep.title}</h4>
+                <Button variant="ghost" size="sm" onClick={handleSkipGuide} className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600">
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              Step {currentGuideStep + 1} of {guideSteps.length}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleSkipGuide}>
-                Skip Guide
-              </Button>
-              {currentGuideStep > 0 && (
-                <Button variant="outline" size="sm" onClick={handlePrevGuideStep}>
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Previous
-                </Button>
+              
+              <p className="text-xs text-gray-600 leading-relaxed mb-3">{currentStep.description}</p>
+              
+              {/* Show validation message if step requires input and validation fails */}
+              {currentStep.requiresInput && !validateCurrentStep(currentStep) && (
+                <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-3">
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <HelpCircle className="w-3 h-3" />
+                    <span className="text-xs font-medium">Complete this field to continue</span>
+                  </div>
+                </div>
               )}
-              <Button
-                size="sm"
-                onClick={handleNextGuideStep}
-                className="bg-teal-600 hover:bg-teal-700"
-                disabled={currentStep?.requiresInput && !validateCurrentStep(currentStep)}
-              >
-                {currentGuideStep < guideSteps.length - 1 ? (
-                  <>
-                    Next
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </>
-                ) : (
-                  "Finish Guide"
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Floating Guide Controls - Always visible during tutorial */}
-      {isGuideActive && (
-        <div className="fixed bottom-6 right-6 z-[80] bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="text-sm font-medium text-gray-700">
-              Tutorial: Step {currentGuideStep + 1} of {guideSteps.length}
-            </div>
-            <div className="flex gap-2">
-              {currentGuideStep > 0 && (
-                <Button variant="outline" size="sm" onClick={handlePrevGuideStep}>
-                  <ArrowLeft className="w-4 h-4" />
+              
+              <div className="text-xs text-gray-500 mb-3">
+                Step {currentGuideStep + 1} of {guideSteps.length}
+              </div>
+              
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+                <div
+                  className="bg-teal-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${((currentGuideStep + 1) / guideSteps.length) * 100}%` }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1">
+                  {currentGuideStep > 0 && (
+                    <Button variant="outline" size="sm" onClick={handlePrevGuideStep} className="h-7 px-3 text-xs">
+                      <ArrowLeft className="w-3 h-3 mr-1" />
+                      Back
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleNextGuideStep}
+                  className="bg-teal-600 hover:bg-teal-700 h-7 px-3 text-xs"
+                  disabled={currentStep.requiresInput && !validateCurrentStep(currentStep)}
+                >
+                  {currentGuideStep < guideSteps.length - 1 ? (
+                    <>
+                      Next
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      Finish
+                      <CheckCircle className="w-3 h-3 ml-1" />
+                    </>
+                  )}
                 </Button>
-              )}
-              <Button
-                size="sm"
-                onClick={handleNextGuideStep}
-                className="bg-teal-600 hover:bg-teal-700"
-                disabled={currentStep?.requiresInput && !validateCurrentStep(currentStep)}
-              >
-                {currentGuideStep < guideSteps.length - 1 ? (
-                  <ArrowRight className="w-4 h-4" />
-                ) : (
-                  <CheckCircle className="w-4 h-4" />
-                )}
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleSkipGuide}>
-                <X className="w-4 h-4" />
-              </Button>
+              </div>
             </div>
           </div>
         </div>

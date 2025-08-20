@@ -31,7 +31,7 @@ export function ReviewFinalizeScreen() {
     },
     {
       id: "your-services",
-      title: "Your Services",
+      title: "Your Operations",
       icon: Settings,
       data: data.industryConfiguration,
       items: [
@@ -67,7 +67,7 @@ export function ReviewFinalizeScreen() {
     },
     {
       id: "work-in-progress",
-      title: "Work in Progress",
+      title: "Your Current Workload",
       icon: Wrench,
       data: data.workInProgress,
       items: [

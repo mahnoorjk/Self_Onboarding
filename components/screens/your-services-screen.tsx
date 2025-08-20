@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Eye } from "lucide-react"
+import { Eye, ChevronDown, ChevronUp, ExternalLink, Zap, Target, CheckCircle2, ArrowRight, BarChart3 } from "lucide-react"
 import { useOnboarding } from '@/components/onboarding-context'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const industries = [
   "Access Control and Entry Systems",
@@ -56,20 +56,32 @@ const electricalMaintenanceDashboards = [
   "Risk Assessment – Compliance",
   "Finance",
   "CRM",
-  "WIP"
+  "Your Current Workload"
 ]
 
 const workTypes = ["Contracts", "Ad-Hoc Work", "Projects"]
 
-export default function YourServicesScreen() {
+export default function BusinessOperationsSetupScreen() {
   const { updateData, data } = useOnboarding()
   const [selectedIndustries, setSelectedIndustries] = useState<string[]>(
     data.industryConfiguration.selectedIndustries || []
+  )
+  const [otherIndustry, setOtherIndustry] = useState<string>(
+    data.industryConfiguration.customIndustry || ""
   )
   const [selectedWorkTypes, setSelectedWorkTypes] = useState<string[]>(
     data.businessInformation.workTypes || []
   )
   const [contractTypes, setContractTypes] = useState<string[]>([])
+  const [jobEntryMethods, setJobEntryMethods] = useState<string[]>([])
+  const [otherJobEntryMethod, setOtherJobEntryMethod] = useState<string>("")
+  // Business information state
+  const [formData, setFormData] = useState(data.businessInformation)
+
+  // Sync formData when data changes
+  useEffect(() => {
+    setFormData(data.businessInformation)
+  }, [data.businessInformation])
   const [selectedForms, setSelectedForms] = useState<string[]>(() => {
     if (data.industryConfiguration?.selectedForms) {
       return data.industryConfiguration.selectedForms
@@ -90,16 +102,16 @@ export default function YourServicesScreen() {
     }
     return []
   })
+  const [showFormsDetails, setShowFormsDetails] = useState(false)
+  const [showDashboardsDetails, setShowDashboardsDetails] = useState(false)
 
-  const handleIndustryChange = (industry: string, checked: boolean) => {
-    const updated = checked 
-      ? [...selectedIndustries, industry]
-      : selectedIndustries.filter(i => i !== industry)
+  const handleIndustryChange = (industry: string) => {
+    const updated = [industry] // Single selection for dropdown
     
     setSelectedIndustries(updated)
     
     // If Electrical Maintenance is selected, initialize forms and dashboards to all items
-    if (industry === "Electrical Maintenance" && checked) {
+    if (industry === "Electrical Maintenance") {
       setSelectedForms(electricalMaintenanceForms)
       setSelectedDashboards(electricalMaintenanceDashboards)
       updateData('industryConfiguration', { 
@@ -114,6 +126,14 @@ export default function YourServicesScreen() {
         selectedIndustries: updated 
       })
     }
+  }
+
+  const handleOtherIndustryChange = (value: string) => {
+    setOtherIndustry(value)
+    updateData('industryConfiguration', { 
+      ...data.industryConfiguration,
+      customIndustry: value 
+    })
   }
 
   const handleWorkTypeChange = (workType: string, checked: boolean) => {
@@ -134,6 +154,31 @@ export default function YourServicesScreen() {
       : contractTypes.filter(t => t !== type)
     
     setContractTypes(updated)
+  }
+
+  const handleJobEntryMethodChange = (method: string, checked: boolean) => {
+    const updated = checked
+      ? [...jobEntryMethods, method]
+      : jobEntryMethods.filter(m => m !== method)
+    
+    setJobEntryMethods(updated)
+  }
+
+  const handleOtherJobEntryMethodChange = (value: string) => {
+    setOtherJobEntryMethod(value)
+  }
+
+  // Business information handlers
+  const handleBusinessVolumeChange = (field: string, value: string) => {
+    const newData = {
+      ...formData,
+      businessVolumes: {
+        ...formData.businessVolumes,
+        [field]: value,
+      },
+    }
+    setFormData(newData)
+    updateData("businessInformation", newData)
   }
 
   const handleFormChange = (form: string, checked: boolean) => {
@@ -173,77 +218,148 @@ export default function YourServicesScreen() {
   const showEquipmentSales = selectedWorkTypes.includes("Equipment Sales")
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Your Services</h1>
-        <p className="text-muted-foreground">
-          Let us know which industries you work in and what types of services you provide
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Enhanced Professional Header */}
+      <div className="text-center space-y-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-200 p-8">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-xl">2</span>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">Set Up Your Business</h1>
+        </div>
+        <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+          Help us understand your business, industry, and operations so we can customize JobLogic 
+          with the right features, forms, and workflows for your needs.
         </p>
+        <div className="flex items-center justify-center space-x-2 text-sm text-teal-700 bg-teal-100 rounded-full px-4 py-2 inline-flex">
+          <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+          <span>This will set up industry-specific features and workflow automation</span>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* Industry Selection */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Industry Selection</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Label>Which industries do you work in?</Label>
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              {industries.map((industry) => (
-                <div key={industry} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={industry}
-                    checked={selectedIndustries.includes(industry)}
-                    onCheckedChange={(checked) => handleIndustryChange(industry, checked as boolean)}
-                  />
-                  <Label htmlFor={industry}>{industry}</Label>
-                </div>
-              ))}
+      <div className="space-y-8">
+        {/* Enhanced Industry Selection */}
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 font-semibold">1</span>
+              </div>
+              <div>
+                <CardTitle className="text-xl text-gray-900">Select Your Industry</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Choose your primary industry to customize JobLogic for your business</p>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div className="max-w-md">
+                <Label htmlFor="industry-select" className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Choose your primary industry:
+                </Label>
+                <Select 
+                  value={selectedIndustries[0] || ""} 
+                  onValueChange={handleIndustryChange}
+                >
+                  <SelectTrigger className="w-full border-gray-300 focus:border-teal-500 focus:ring-teal-500">
+                    <SelectValue placeholder="Select an industry..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {industries.map((industry) => (
+                      <SelectItem key={industry} value={industry}>
+                        {industry}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {selectedIndustries[0] && (
+                <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle2 className="w-5 h-5 text-teal-600" />
+                    <span className="font-medium text-teal-800">Selected: {selectedIndustries[0]}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+            {selectedIndustries.includes("Other") && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <Label htmlFor="otherIndustryInput" className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Please specify your industry:
+                </Label>
+                <Input
+                  id="otherIndustryInput"
+                  value={otherIndustry}
+                  onChange={(e) => handleOtherIndustryChange(e.target.value)}
+                  placeholder="e.g., Custom manufacturing, Marine services, Specialized consulting..."
+                  className="border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {/* Selected Industries Display */}
-        {selectedIndustries.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Selected Industries</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-wrap gap-2">
+        {/* Enhanced Selected Industries Display */}
+        {/* {selectedIndustries.length > 0 && (
+          <div className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-green-900">
+                  Great! You've selected {selectedIndustries.length} {selectedIndustries.length === 1 ? 'industry' : 'industries'}
+                </h3>
+                <p className="text-sm text-green-700">JobLogic will be configured with relevant features for these industries</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
               {selectedIndustries.map((industry) => (
-                <Badge key={industry} variant="secondary">{industry}</Badge>
+                <div key={industry} className="flex items-center gap-2 bg-white border border-green-300 rounded-lg px-4 py-2 shadow-sm">
+                  <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                  <span className="font-medium text-green-800">{industry}</span>
+                </div>
               ))}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </div>
+        )} */}
 
-        {/* Electrical Maintenance Forms */}
-        {selectedIndustries.includes("Electrical Maintenance") && (
-          <Card>
+        {/* Enhanced Electrical Maintenance Forms */}
+        {/* {selectedIndustries.includes("Electrical Maintenance") && (
+          <Card className="border border-gray-200">
             <CardHeader>
-              <CardTitle>Electrical Maintenance - Forms</CardTitle>
+              <CardTitle className="text-lg">Electrical Maintenance Forms Package</CardTitle>
+              <p className="text-sm text-gray-600">22 professional, regulation-compliant forms automatically added</p>
             </CardHeader>
             <CardContent>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <div className="border border-gray-200 rounded p-4 bg-gray-50">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-green-600 font-bold text-lg">✓</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-green-800 mb-1">Free Industry-Standard Forms Included</h4>
-                    <p className="text-sm text-green-700 leading-relaxed">
-                      As part of your onboarding, we're providing these professionally designed electrical maintenance forms at no extra cost. 
-                      These templates comply with industry standards and will save you hours of setup time. Simply uncheck any forms you don't need.
+                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">22 Professional Forms Included</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Industry-standard forms that comply with current regulations. All forms are pre-configured and ready to use in your workflows.
                     </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowFormsDetails(!showFormsDetails)}
+                      >
+                        {showFormsDetails ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                        {showFormsDetails ? 'Hide' : 'View'} Complete Forms List
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground mt-1 mb-3">All forms are pre-selected. Uncheck any you don't need.</p>
-                <div className="grid grid-cols-1 gap-3 mt-2">
+              
+              {showFormsDetails && (
+                <div className="mt-4 max-h-60 overflow-y-auto border rounded p-3 bg-white">
+                  <p className="text-sm text-gray-600 mb-3">All forms are pre-selected. Uncheck any you don't need:</p>
                   {electricalMaintenanceForms.map((form) => (
-                    <div key={form} className="flex items-center justify-between space-x-2 p-2 rounded-lg hover:bg-gray-50">
+                    <div key={form} className="flex items-center justify-between space-x-2 p-2 hover:bg-gray-50 rounded">
                       <div className="flex items-center space-x-2 flex-1">
                         <Checkbox 
                           id={`form-${form}`} 
@@ -253,49 +369,56 @@ export default function YourServicesScreen() {
                         <Label htmlFor={`form-${form}`} className="text-sm cursor-pointer flex-1">{form}</Label>
                       </div>
                       <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
                         onClick={() => handlePreview('form', form)}
-                        className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
+                        className="px-2 py-1 h-auto text-xs"
                       >
                         <Eye className="w-3 h-3" />
-                        Preview
                       </Button>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Electrical Maintenance Dashboards */}
-        {selectedIndustries.includes("Electrical Maintenance") && (
-          <Card>
+        {/* {selectedIndustries.includes("Electrical Maintenance") && (
+          <Card className="border border-gray-200">
             <CardHeader>
-              <CardTitle>Electrical Maintenance - Dashboards</CardTitle>
+              <CardTitle className="text-lg">Dashboard Package</CardTitle>
+              <p className="text-sm text-gray-600">5 business intelligence dashboards ready to use</p>
             </CardHeader>
             <CardContent>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <div className="border border-gray-200 rounded p-4 bg-gray-50">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-600 font-bold text-lg">📊</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-blue-800 mb-1">Complimentary Dashboard Views</h4>
-                    <p className="text-sm text-blue-700 leading-relaxed">
-                      Get instant business insights with these pre-built dashboard views, included free with your onboarding. 
-                      These intelligent dashboards will help you track compliance, monitor performance, and manage your workflow efficiently. 
-                      Uncheck any dashboards you don't require.
+                  <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-gray-900 mb-1">5 Smart Dashboard Views</h4>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Track compliance, monitor performance, and manage workflow.
                     </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowDashboardsDetails(!showDashboardsDetails)}
+                      >
+                        {showDashboardsDetails ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                        {showDashboardsDetails ? 'Hide' : 'View'} Dashboards
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground mt-1 mb-3">All dashboards are pre-selected. Uncheck any you don't need.</p>
-                <div className="grid grid-cols-1 gap-3 mt-2">
+              
+              {showDashboardsDetails && (
+                <div className="mt-4 max-h-60 overflow-y-auto border rounded p-3 bg-white">
+                  <p className="text-sm text-gray-600 mb-3">All dashboards are pre-selected. Uncheck any you don't need:</p>
                   {electricalMaintenanceDashboards.map((dashboard) => (
-                    <div key={dashboard} className="flex items-center justify-between space-x-2 p-2 rounded-lg hover:bg-gray-50">
+                    <div key={dashboard} className="flex items-center justify-between space-x-2 p-2 hover:bg-gray-50 rounded">
                       <div className="flex items-center space-x-2 flex-1">
                         <Checkbox 
                           id={`dashboard-${dashboard}`} 
@@ -305,24 +428,227 @@ export default function YourServicesScreen() {
                         <Label htmlFor={`dashboard-${dashboard}`} className="text-sm cursor-pointer flex-1">{dashboard}</Label>
                       </div>
                       <Button 
-                        variant="outline" 
+                        variant="ghost" 
                         size="sm" 
                         onClick={() => handlePreview('dashboard', dashboard)}
-                        className="flex items-center gap-1 px-2 py-1 h-auto text-xs"
+                        className="px-2 py-1 h-auto text-xs"
                       >
                         <Eye className="w-3 h-3" />
-                        Preview
                       </Button>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
-        )}
+        )} */}
+
+        {/* Your Usual Workload Section */}
+        <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                <span className="text-teal-600 font-semibold">2</span>
+              </div>
+              <div>
+                <CardTitle className="text-xl text-gray-900">Your Usual Workload</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Help us understand the scale of your operations</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="numberOfCustomers" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                  Number of Active Customers *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="numberOfCustomers"
+                    type="number"
+                    value={formData.businessVolumes?.numberOfCustomers || ''}
+                    onChange={(e) => handleBusinessVolumeChange("numberOfCustomers", e.target.value)}
+                    placeholder="e.g., 150"
+                    className="border-gray-300 focus:border-teal-500 focus:ring-teal-500 pl-4"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-sm">customers</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="numberOfEngineers" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  Number of Engineers/Technicians *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="numberOfEngineers"
+                    type="number"
+                    value={formData.businessVolumes?.numberOfEngineers || ''}
+                    onChange={(e) => handleBusinessVolumeChange("numberOfEngineers", e.target.value)}
+                    placeholder="e.g., 12"
+                    className="border-gray-300 focus:border-teal-500 focus:ring-teal-500 pl-4"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-sm">staff</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Label htmlFor="numberOfJobs" className="text-sm font-semibold text-gray-700 flex items-center">
+                  <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                  Average Jobs per Month *
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="numberOfJobs"
+                    type="number"
+                    value={formData.businessVolumes?.numberOfJobs || ''}
+                    onChange={(e) => handleBusinessVolumeChange("numberOfJobs", e.target.value)}
+                    placeholder="e.g., 200"
+                    className="border-gray-300 focus:border-teal-500 focus:ring-teal-500 pl-4"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                    <span className="text-gray-400 text-sm">jobs/month</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* How You Work Section */}
+        {/* <Card className="border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                <span className="text-teal-600 font-semibold">3</span>
+              </div>
+              <div>
+                <CardTitle className="text-xl text-gray-900">How You Work</CardTitle>
+                <p className="text-sm text-gray-600 mt-1">Tell us about your workflow and job entry methods</p>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Label className="text-sm font-semibold text-gray-700 mb-4 block">How do jobs typically enter your system?</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                "Phone calls",
+                "Email requests", 
+                "Website form submissions",
+                "WhatsApp or SMS",
+                "Repeat customer rebooking",
+                "Internal team request",
+                "Customer Portal",
+                "Third-Party Integration",
+                "Other"
+              ].map((method) => (
+                <div key={method} className={`relative flex items-center space-x-3 p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:scale-102 ${
+                  jobEntryMethods.includes(method)
+                    ? 'border-teal-500 bg-teal-50 shadow-md'
+                    : 'border-gray-200 hover:border-teal-300 hover:bg-teal-25'
+                }`}
+                onClick={() => handleJobEntryMethodChange(method, !jobEntryMethods.includes(method))}
+                >
+                  <Checkbox
+                    id={method}
+                    checked={jobEntryMethods.includes(method)}
+                    onCheckedChange={(checked) => handleJobEntryMethodChange(method, checked as boolean)}
+                    className="data-[state=checked]:bg-teal-500 data-[state=checked]:border-teal-500"
+                  />
+                  <Label htmlFor={method} className="cursor-pointer text-sm">{method}</Label>
+                </div>
+              ))}
+            </div>
+            {jobEntryMethods.includes("Other") && (
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <Label htmlFor="otherJobEntryInput" className="text-sm font-semibold text-gray-700 mb-2 block">
+                  Please specify other method:
+                </Label>
+                <Input
+                  id="otherJobEntryInput"
+                  value={otherJobEntryMethod}
+                  onChange={(e) => handleOtherJobEntryMethodChange(e.target.value)}
+                  placeholder="Enter other job entry method"
+                  className="border-gray-300 focus:border-teal-500 focus:ring-teal-500"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card> */}
+          {/* <Card className="border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+            <CardHeader className="pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold text-xl">📊</span>
+                </div>
+                <div>
+                  <CardTitle className="text-xl text-blue-800">Smart Dashboards Ready!</CardTitle>
+                  <p className="text-sm text-blue-700 mt-1">5 intelligent dashboard views to track your business</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-white border border-blue-200 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-blue-600 font-bold text-xl">�</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-blue-800 mb-2 text-lg">5 Smart Dashboard Views</h4>
+                    <p className="text-blue-700 mb-4 leading-relaxed">
+                      Track compliance, monitor performance, and manage workflow with pre-built intelligent dashboards. 
+                      Perfect for staying on top of your business metrics!
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowDashboardsDetails(!showDashboardsDetails)}
+                      >
+                        {showDashboardsDetails ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                        {showDashboardsDetails ? 'Hide' : 'See'} All Dashboards
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {showDashboardsDetails && (
+                <div className="mt-4 max-h-60 overflow-y-auto border rounded p-3 bg-white">
+                  <p className="text-sm text-gray-600 mb-3">All dashboards are pre-selected. Uncheck any you don't need:</p>
+                  {electricalMaintenanceDashboards.map((dashboard) => (
+                    <div key={dashboard} className="flex items-center justify-between space-x-2 p-2 hover:bg-gray-50 rounded">
+                      <div className="flex items-center space-x-2 flex-1">
+                        <Checkbox 
+                          id={`dashboard-${dashboard}`} 
+                          checked={selectedDashboards.includes(dashboard)}
+                          onCheckedChange={(checked) => handleDashboardChange(dashboard, checked as boolean)}
+                        />
+                        <Label htmlFor={`dashboard-${dashboard}`} className="text-sm cursor-pointer flex-1">{dashboard}</Label>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handlePreview('dashboard', dashboard)}
+                        className="px-2 py-1 h-auto text-xs"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card> */}
 
         {/* Work Types Selection */}
-        <Card>
+        {/* <Card>
           <CardHeader>
             <CardTitle>Service Types</CardTitle>
           </CardHeader>
@@ -341,7 +667,7 @@ export default function YourServicesScreen() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Selected Work Types Display */}
         {selectedWorkTypes.length > 0 && (
@@ -356,6 +682,50 @@ export default function YourServicesScreen() {
             </CardContent>
           </Card>
         )}
+
+        {/* How You Work
+        <Card>
+          <CardHeader>
+            <CardTitle>How You Work</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Label>How do jobs typically enter your system?</Label>
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              {[
+                "Phone calls",
+                "Email requests", 
+                "Website form submissions",
+                "WhatsApp or SMS",
+                "Repeat customer rebooking",
+                "Internal team request",
+                "Customer Portal",
+                "Third-Party Integration",
+                "Other"
+              ].map((method) => (
+                <div key={method} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={method}
+                    checked={jobEntryMethods.includes(method)}
+                    onCheckedChange={(checked) => handleJobEntryMethodChange(method, checked as boolean)}
+                  />
+                  <Label htmlFor={method}>{method}</Label>
+                </div>
+              ))}
+            </div>
+            {jobEntryMethods.includes("Other") && (
+              <div className="mt-3">
+                <Label htmlFor="otherJobEntryInput">Please specify other method:</Label>
+                <Input
+                  id="otherJobEntryInput"
+                  value={otherJobEntryMethod}
+                  onChange={(e) => handleOtherJobEntryMethodChange(e.target.value)}
+                  placeholder="Enter other job entry method"
+                  className="mt-1"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card> */}
 
         {/* Contract Management Details */}
         {showContracts && (
@@ -439,7 +809,7 @@ export default function YourServicesScreen() {
                 <Label>Average Job Value</Label>
                 <Input placeholder="e.g., £75" />
               </div>
-              <div>
+              {/* <div>
                 <Label>Generate Quotes?</Label>
                 <RadioGroup className="mt-2">
                   {["Yes", "No"].map((opt) => (
@@ -449,7 +819,7 @@ export default function YourServicesScreen() {
                     </div>
                   ))}
                 </RadioGroup>
-              </div>
+              </div> */}
               <div>
                 <Label>Job Assignment</Label>
                 <div className="grid grid-cols-2 gap-3 mt-2">
@@ -461,7 +831,7 @@ export default function YourServicesScreen() {
                   ))}
                 </div>
               </div>
-              <div>
+              {/* <div>
                 <Label>Request Channels</Label>
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   {["Telephone", "Customer Portal", "Email", "Third-Party Integration"].map((ch) => (
@@ -475,7 +845,7 @@ export default function YourServicesScreen() {
                   <Label htmlFor="otherChannel">Other</Label>
                   <Input id="otherChannel" />
                 </div>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         )}
@@ -623,6 +993,26 @@ export default function YourServicesScreen() {
             </CardContent>
           </Card>
         )}
+
+        {/* Next Steps Call-to-Action */}
+        {/* {selectedIndustries.length > 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Setup Complete</h3>
+            <p className="text-gray-600 mb-4">
+              Your workspace is configured. Continue to the next step to tell us how you work.
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <span>Industry selected</span>
+              {selectedIndustries.includes("Electrical Maintenance") && (
+                <>
+                  <span className="mx-2">•</span>
+                  <span>Forms & dashboards added</span>
+                </>
+              )}
+            </div>
+          </div>
+        )} */}
 
       </div>
     </div>

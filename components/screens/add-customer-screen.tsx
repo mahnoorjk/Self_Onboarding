@@ -149,10 +149,9 @@ export function AddCustomerScreen({
   // Guide state
   const [isGuideActive, setIsGuideActive] = useState(false)
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
-  const [showGuideDialog, setShowGuideDialog] = useState(false)
   const [guideOverlayPosition, setGuideOverlayPosition] = useState({ top: 0, left: 0, width: 0, height: 0 })
   const [showStartGuideButton, setShowStartGuideButton] = useState(false)
-  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false)
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
 
   // Form state for validation
   const [formData, setFormData] = useState({
@@ -183,9 +182,9 @@ export function AddCustomerScreen({
   // Initialize guide when showGuide prop is true (auto-start from tutorials)
   useEffect(() => {
     if (showGuide) {
-      // If coming from tutorials, show the welcome dialog automatically
+      // If coming from tutorials, start the guide automatically
       const timer = setTimeout(() => {
-        setShowWelcomeDialog(true)
+        startGuide()
       }, 500) // Short delay to ensure page is rendered
       return () => clearTimeout(timer) // Cleanup timer on unmount
     } else {
@@ -202,16 +201,15 @@ export function AddCustomerScreen({
       // Calculate overlay position for highlighting
       const highlightTimer = setTimeout(() => {
         updateGuideOverlay(currentStep)
+        updateTooltipPosition(currentStep)
         // Scroll to the target element to ensure it's visible
         scrollToTarget(currentStep)
-        setShowGuideDialog(true)
       }, 300)
 
       return () => clearTimeout(highlightTimer)
     } else if (isGuideActive && currentGuideStep >= guideSteps.length) {
       // Guide finished
       setIsGuideActive(false)
-      setShowGuideDialog(false)
     }
   }, [currentGuideStep, isGuideActive])
 
@@ -253,11 +251,9 @@ export function AddCustomerScreen({
   }, [isGuideActive, currentGuideStep, guideSteps])
 
   const startGuide = () => {
-    setShowWelcomeDialog(false) // Close welcome dialog if it was open
     setIsGuideActive(true)
     setCurrentGuideStep(0)
     setShowStartGuideButton(false) // Hide the manual start button on the page
-    setShowGuideDialog(true) // Open the first guide step dialog
   }
 
   const updateGuideOverlay = (step: GuideStep) => {
@@ -271,6 +267,55 @@ export function AddCustomerScreen({
         width: rect.width + 16,
         height: rect.height + 16,
       })
+    }
+  }
+
+  const updateTooltipPosition = (step: GuideStep) => {
+    const targetElement = getTargetElement(step.target)
+    if (targetElement) {
+      const rect = targetElement.getBoundingClientRect()
+      const tooltipWidth = 320 // Approximate tooltip width
+      const tooltipHeight = 120 // Approximate tooltip height
+      
+      let top = rect.top + window.scrollY
+      let left = rect.left + window.scrollX
+      
+      // Position tooltip based on step position preference and available space
+      switch (step.position) {
+        case "top":
+          top = rect.top + window.scrollY - tooltipHeight - 12
+          left = rect.left + window.scrollX + (rect.width / 2) - (tooltipWidth / 2)
+          break
+        case "bottom":
+          top = rect.top + window.scrollY + rect.height + 12
+          left = rect.left + window.scrollX + (rect.width / 2) - (tooltipWidth / 2)
+          break
+        case "left":
+          top = rect.top + window.scrollY + (rect.height / 2) - (tooltipHeight / 2)
+          left = rect.left + window.scrollX - tooltipWidth - 12
+          break
+        case "right":
+          top = rect.top + window.scrollY + (rect.height / 2) - (tooltipHeight / 2)
+          left = rect.left + window.scrollX + rect.width + 12
+          break
+        default:
+          // Default to bottom
+          top = rect.top + window.scrollY + rect.height + 12
+          left = rect.left + window.scrollX + (rect.width / 2) - (tooltipWidth / 2)
+      }
+      
+      // Ensure tooltip stays within viewport bounds
+      const viewportWidth = window.innerWidth
+      const viewportHeight = window.innerHeight
+      
+      if (left < 10) left = 10
+      if (left + tooltipWidth > viewportWidth - 10) left = viewportWidth - tooltipWidth - 10
+      if (top < 10) top = 10
+      if (top + tooltipHeight > window.scrollY + viewportHeight - 10) {
+        top = window.scrollY + viewportHeight - tooltipHeight - 10
+      }
+      
+      setTooltipPosition({ top, left })
     }
   }
 
@@ -370,7 +415,6 @@ export function AddCustomerScreen({
     } else {
       // Guide completed
       setIsGuideActive(false)
-      setShowGuideDialog(false)
     }
   }
 
@@ -389,9 +433,7 @@ export function AddCustomerScreen({
 
   const handleSkipGuide = () => {
     setIsGuideActive(false)
-    setShowGuideDialog(false)
     setShowStartGuideButton(true) // Show the manual start button on the page if skipped
-    setShowWelcomeDialog(false) // Also close welcome dialog if open
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -407,7 +449,6 @@ export function AddCustomerScreen({
     // If guide is active, complete it
     if (isGuideActive) {
       setIsGuideActive(false)
-      setShowGuideDialog(false)
     }
   }
 
@@ -479,7 +520,7 @@ export function AddCustomerScreen({
             </div>
             {showStartGuideButton && !isGuideActive && (
               <Button
-                onClick={() => setShowWelcomeDialog(true)}
+                onClick={startGuide}
                 className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2 shadow-lg"
               >
                 <Lightbulb className="w-4 h-4" />
@@ -735,138 +776,73 @@ export function AddCustomerScreen({
         </div>
       </div>
 
-      {/* Welcome Dialog */}
-      <Dialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Target className="w-6 h-6 text-teal-600" />
-              Ready to Create Your First Customer?
-            </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed mt-2">
-              Welcome to the customer creation tutorial! We'll guide you through each step of creating your first
-              customer record with interactive tips and helpful guidance.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 my-4">
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Step-by-step interactive guidance</span>
+      {/* Single Unified Guide Control - Bottom Right Corner */}
+      {isGuideActive && currentStep && (
+        <div className="fixed bottom-6 right-6 z-[80] bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <Target className="w-4 h-4 text-teal-600" />
             </div>
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Visual highlights and helpful tips</span>
-            </div>
-            <div className="flex items-center gap-3 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <span>Learn best practices for customer management</span>
-            </div>
-          </div>
-          <DialogFooter className="flex gap-3">
-            <Button variant="outline" onClick={handleSkipGuide}>
-              Skip Tutorial
-            </Button>
-            <Button onClick={startGuide} className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2">
-              <Lightbulb className="w-4 h-4" />
-              Start Tutorial
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Guide Dialog - Fixed positioning to ensure visibility */}
-      <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
-        <DialogContent
-          className="sm:max-w-lg z-[70] fixed"
-          style={{
-            position: "fixed",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            maxHeight: "90vh",
-            overflow: "auto",
-          }}
-        >
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <Target className="w-5 h-5 text-teal-600" />
-              {currentStep?.title}
-            </DialogTitle>
-            <DialogDescription className="text-base leading-relaxed mt-2">{currentStep?.description}</DialogDescription>
-          </DialogHeader>
-
-          {/* Show validation message if step requires input and validation fails */}
-          {currentStep?.requiresInput && !validateCurrentStep(currentStep) && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4">
-              <div className="flex items-center gap-2 text-amber-800">
-                <HelpCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">Please complete this step to continue</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-semibold text-gray-900 text-sm">{currentStep.title}</h4>
+                <Button variant="ghost" size="sm" onClick={handleSkipGuide} className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600">
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              Step {currentGuideStep + 1} of {guideSteps.length}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleSkipGuide}>
-                Skip Guide
-              </Button>
-              {currentGuideStep > 0 && (
-                <Button variant="outline" size="sm" onClick={handlePrevGuideStep}>
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Previous
-                </Button>
+              
+              <p className="text-xs text-gray-600 leading-relaxed mb-3">{currentStep.description}</p>
+              
+              {/* Show validation message if step requires input and validation fails */}
+              {currentStep.requiresInput && !validateCurrentStep(currentStep) && (
+                <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-3">
+                  <div className="flex items-center gap-2 text-amber-800">
+                    <HelpCircle className="w-3 h-3" />
+                    <span className="text-xs font-medium">Complete this field to continue</span>
+                  </div>
+                </div>
               )}
-              <Button
-                size="sm"
-                onClick={handleNextGuideStep}
-                className="bg-teal-600 hover:bg-teal-700"
-                disabled={currentStep?.requiresInput && !validateCurrentStep(currentStep)}
-              >
-                {currentGuideStep < guideSteps.length - 1 ? (
-                  <>
-                    Next
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </>
-                ) : (
-                  "Finish Guide"
-                )}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Floating Guide Controls - Always visible during tutorial */}
-      {isGuideActive && (
-        <div className="fixed bottom-6 right-6 z-[80] bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="text-sm font-medium text-gray-700">
-              Tutorial: Step {currentGuideStep + 1} of {guideSteps.length}
-            </div>
-            <div className="flex gap-2">
-              {currentGuideStep > 0 && (
-                <Button variant="outline" size="sm" onClick={handlePrevGuideStep}>
-                  <ArrowLeft className="w-4 h-4" />
+              
+              <div className="text-xs text-gray-500 mb-3">
+                Step {currentGuideStep + 1} of {guideSteps.length}
+              </div>
+              
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-1.5 mb-3">
+                <div
+                  className="bg-teal-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${((currentGuideStep + 1) / guideSteps.length) * 100}%` }}
+                />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1">
+                  {currentGuideStep > 0 && (
+                    <Button variant="outline" size="sm" onClick={handlePrevGuideStep} className="h-7 px-3 text-xs">
+                      <ArrowLeft className="w-3 h-3 mr-1" />
+                      Back
+                    </Button>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  onClick={handleNextGuideStep}
+                  className="bg-teal-600 hover:bg-teal-700 h-7 px-3 text-xs"
+                  disabled={currentStep.requiresInput && !validateCurrentStep(currentStep)}
+                >
+                  {currentGuideStep < guideSteps.length - 1 ? (
+                    <>
+                      Next
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </>
+                  ) : (
+                    <>
+                      Finish
+                      <CheckCircle className="w-3 h-3 ml-1" />
+                    </>
+                  )}
                 </Button>
-              )}
-              <Button
-                size="sm"
-                onClick={handleNextGuideStep}
-                className="bg-teal-600 hover:bg-teal-700"
-                disabled={currentStep?.requiresInput && !validateCurrentStep(currentStep)}
-              >
-                {currentGuideStep < guideSteps.length - 1 ? (
-                  <ArrowRight className="w-4 h-4" />
-                ) : (
-                  <CheckCircle className="w-4 h-4" />
-                )}
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleSkipGuide}>
-                <X className="w-4 h-4" />
-              </Button>
+              </div>
             </div>
           </div>
         </div>

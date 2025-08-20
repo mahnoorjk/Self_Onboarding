@@ -3,7 +3,7 @@
 import { useOnboarding } from "../onboarding-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar } from "lucide-react"
+import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap } from "lucide-react"
 import { useState } from "react"
 
 interface CompletionScreenProps {
@@ -11,12 +11,6 @@ interface CompletionScreenProps {
   onNavigateToTutorials?: () => void
   onNavigateToThirtyDayJourney?: () => void
   setShowOnboardingModal?: (show: boolean) => void
-  onNavigateToAddCustomer?: (showGuide?: boolean) => void
-  onNavigateToLogJob?: (showGuide?: boolean) => void
-  onNavigateToLogQuote?: (showGuide?: boolean) => void
-  onNavigateToReports?: (showGuide?: boolean) => void
-  onTaskCompleted?: (taskId: string) => void
-  completedTasks?: string[]
 }
 
 interface ActionTask {
@@ -30,28 +24,16 @@ interface ActionTask {
   onClick: () => void
 }
 
-export function CompletionScreen({ 
-  onOnboardingCompletion, 
-  onNavigateToTutorials, 
-  onNavigateToThirtyDayJourney, 
-  setShowOnboardingModal,
-  onNavigateToAddCustomer,
-  onNavigateToLogJob,
-  onNavigateToLogQuote,
-  onNavigateToReports,
-  onTaskCompleted,
-  completedTasks = []
-}: CompletionScreenProps = {}) {
+export function CompletionScreen({ onOnboardingCompletion, onNavigateToTutorials, onNavigateToThirtyDayJourney, setShowOnboardingModal }: CompletionScreenProps = {}) {
   const { setCurrentStep, data } = useOnboarding()
+  const [completedTasks, setCompletedTasks] = useState<string[]>([])
 
   const handleGoBack = () => {
-    setCurrentStep(3) // Go back to Work in Progress screen (now step 3)
+    setCurrentStep(4) // Go back to Work in Progress screen
   }
 
   const markTaskCompleted = (taskId: string) => {
-    if (onTaskCompleted) {
-      onTaskCompleted(taskId)
-    }
+    setCompletedTasks(prev => [...prev, taskId])
   }
 
   const hasWIPJobs = data.workInProgress?.hasWIPJobs
@@ -64,28 +46,22 @@ export function CompletionScreen({
   const actionTasks: ActionTask[] = [
     {
       id: "add-customer",
-      title: "Add a Customer",
+      title: "Add Your First Customer",
       description: hasWIPJobs 
         ? "Bring one of your real customers into the system"
-        : "Create a customer to get started",
+        : "Create a sample customer to get started",
       icon: Users,
       estimatedTime: "2 min",
       isRequired: true,
       status: completedTasks.includes("add-customer") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Add customer task clicked, onNavigateToAddCustomer:", !!onNavigateToAddCustomer)
-        if (onNavigateToAddCustomer) {
-          console.log("Calling onNavigateToAddCustomer with guided tour")
-          onNavigateToAddCustomer(true)
-        } else {
-          console.log("Navigate to add customer - no navigation function provided")
-        }
+        console.log("Navigate to add customer")
         markTaskCompleted("add-customer")
       }
     },
     {
       id: "create-quote",
-      title: hasQuotes ? "Log Your Pending Quote" : "Create a Quote",
+      title: hasQuotes ? "Log Your Pending Quote" : "Create a Sample Quote",
       description: hasQuotes 
         ? `You mentioned ${wipCounts?.pendingQuotes} pending quote${wipCounts?.pendingQuotes !== 1 ? 's' : ''} - let's get one in`
         : "See how easy it is to create professional quotes",
@@ -94,40 +70,26 @@ export function CompletionScreen({
       isRequired: true,
       status: completedTasks.includes("create-quote") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Create quote task clicked, onNavigateToLogQuote:", !!onNavigateToLogQuote)
-        if (onNavigateToLogQuote) {
-          console.log("Calling onNavigateToLogQuote with guided tour")
-          onNavigateToLogQuote(true)
-        } else {
-          console.log("Navigate to quote creation - no navigation function provided")
-        }
+        console.log("Navigate to quote creation")
         markTaskCompleted("create-quote")
       }
     },
     {
-      id: "create-job",
-      title: hasActiveJobs ? "Add Your Active Jobs" : "Create a Job",
-      description: hasActiveJobs
-        ? `Bring your ${wipCounts?.inProgress || 0} active and ${wipCounts?.scheduled || 0} scheduled jobs into the system`
-        : "Set up a job from start to finish - the core of your business workflow",
+      id: "quote-to-job",
+      title: "Turn Quote into Job",
+      description: "Experience the full workflow from quote approval to job creation",
       icon: TrendingUp,
       estimatedTime: "4 min",
       isRequired: true,
-      status: completedTasks.includes("create-job") ? 'completed' : 'pending',
+      status: completedTasks.includes("quote-to-job") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Create job task clicked, onNavigateToLogJob:", !!onNavigateToLogJob)
-        if (onNavigateToLogJob) {
-          console.log("Calling onNavigateToLogJob with guided tour")
-          onNavigateToLogJob(true)
-        } else {
-          console.log("Navigate to job creation - no navigation function provided")
-        }
-        markTaskCompleted("create-job")
+        console.log("Navigate to quote-to-job workflow")
+        markTaskCompleted("quote-to-job")
       }
     },
     {
       id: "create-invoice",
-      title: hasInvoices ? "Send Your Pending Invoice" : "Create an Invoice",
+      title: hasInvoices ? "Send Your Pending Invoice" : "Create Your First Invoice",
       description: hasInvoices
         ? `Get those ${wipCounts?.pendingInvoices} invoice${wipCounts?.pendingInvoices !== 1 ? 's' : ''} sent out`
         : "Learn how to get paid faster with professional invoicing",
@@ -149,13 +111,7 @@ export function CompletionScreen({
       isRequired: false,
       status: completedTasks.includes("explore-reports") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Reports task clicked, onNavigateToReports:", !!onNavigateToReports)
-        if (onNavigateToReports) {
-          console.log("Calling onNavigateToReports with guided tour")
-          onNavigateToReports(true)
-        } else {
-          console.log("Navigate to reports - no navigation function provided")
-        }
+        console.log("Navigate to reports")
         markTaskCompleted("explore-reports")
       }
     }
@@ -428,84 +384,50 @@ export function CompletionScreen({
         </CardContent>
       </Card>
 
-      {/* Level 2 Preview - Always Visible */}
-      <Card className={`transition-all duration-300 ${
-        completedRequiredTasks.length === requiredTasks.length 
-          ? 'border-blue-200 bg-blue-50 hover:border-blue-300 cursor-pointer' 
-          : 'border-gray-200 bg-gray-50 opacity-75'
-      }`}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                completedRequiredTasks.length === requiredTasks.length 
-                  ? 'bg-blue-100' 
-                  : 'bg-gray-100'
-              }`}>
-                <GraduationCap className={`w-6 h-6 ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-600' 
-                    : 'text-gray-400'
-                }`} />
-              </div>
-              <div>
-                <h3 className={`text-lg font-semibold ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-800' 
-                    : 'text-gray-500'
-                }`}>
-                  Level 2: Master the System
-                </h3>
-                <p className={`text-sm ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-700' 
-                    : 'text-gray-400'
-                }`}>
-                  Quick tutorials & videos on everyday tasks
-                </p>
-              </div>
-            </div>
-            {completedRequiredTasks.length === requiredTasks.length ? (
-              <div className="text-green-600">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-            ) : (
-              <div className="text-gray-400 text-sm font-medium">
-                {requiredTasks.length - completedRequiredTasks.length} tasks left
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Clock className="w-3 h-3" />
-              <span>2-5 minutes each</span>
-            </div>
-            <Button 
-              disabled={completedRequiredTasks.length !== requiredTasks.length}
-              className={`${
-                completedRequiredTasks.length === requiredTasks.length 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              onClick={() => {
-                if (completedRequiredTasks.length === requiredTasks.length) {
-                  if (onNavigateToTutorials) {
-                    onNavigateToTutorials()
-                  } else {
-                    console.log("Navigate to tutorials")
+      {/* Next Steps */}
+      {completedRequiredTasks.length === requiredTasks.length && (
+        <Card className="mb-8 border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-green-800 mb-2">Excellent Work!</h2>
+              <p className="text-green-700 mb-4">
+                You've completed the core setup. Ready for your 30-day learning journey?
+              </p>
+              <Button 
+                onClick={() => {
+                  if (setShowOnboardingModal) {
+                    setShowOnboardingModal(true)
+                  } else if (onNavigateToThirtyDayJourney) {
+                    onNavigateToThirtyDayJourney()
                   }
-                }
-              }}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              {completedRequiredTasks.length === requiredTasks.length ? 'Access Now' : 'Locked'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Continue to 30-Day Journey
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
+      {/* Skip Option */}
+      <div className="text-center">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            if (setShowOnboardingModal) {
+              setShowOnboardingModal(true)
+            } else if (onNavigateToThirtyDayJourney) {
+              onNavigateToThirtyDayJourney()
+            }
+          }}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          Skip for now - Take me to 30-day journey
+        </Button>
+      </div>
     </div>
   )
 }

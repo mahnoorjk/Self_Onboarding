@@ -174,9 +174,14 @@ interface ThirtyDayOnboardingSectionProps {
   isLoggingJobCompleted?: boolean
   isCreatingCustomerCompleted?: boolean
   isInitialOnboardingCompleted?: boolean
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
   onNavigateToAddCustomer?: () => void
+  onNavigateToLogJob?: (withGuide?: boolean) => void
+  onNavigateToReports?: (withGuide?: boolean) => void
   onCustomerSaveSuccess?: () => void
   onQuoteTaskCompleted?: () => void
+  onJourneyComplete?: () => void
   workInProgressData?: {
     hasWIPJobs: boolean
     totalJobs: number
@@ -643,7 +648,7 @@ const onboardingTasks: OnboardingTask[] = [
   },
   {
     id: "29",
-    title: "30-Day Journey Complete! 🎉",
+    title: "Your Onboarding Journey Complete! 🎉",
     description: "Congratulations! You're now ready to manage your business efficiently!",
     type: "milestone",
     day: 20,
@@ -654,7 +659,7 @@ const onboardingTasks: OnboardingTask[] = [
     category: "Milestones",
     points: 1000,
     prerequisites: ["23", "28"],
-    rewards: ["Joblogic Master Badge", "30-Day Champion", "Exclusive Access"],
+    rewards: ["Joblogic Master Badge", "Onboarding Champion", "Exclusive Access"],
     difficulty: "advanced",
   },
 
@@ -810,7 +815,7 @@ const achievements: Achievement[] = [
   {
     id: "onboarding_legend",
     title: "Onboarding Legend",
-    description: "Complete the entire 30-day journey with excellence",
+    description: "Complete the entire onboarding journey with excellence",
     icon: Award,
     unlocked: false,
     points: 1500,
@@ -822,7 +827,7 @@ const achievements: Achievement[] = [
 const weeklyGoals: WeeklyGoal[] = [
   {
     week: 1,
-    title: "Get Started & Organize",
+    title: "Profile Setup & Organize",
     description: "Set up your business basics and organize your existing work",
     targetTasks: 6,
     completedTasks: 0,
@@ -887,9 +892,14 @@ export function ThirtyDayOnboardingSection({
   isLoggingJobCompleted = false, 
   isCreatingCustomerCompleted = false,
   isInitialOnboardingCompleted = false,
+  isOpen,
+  onOpenChange,
   onNavigateToAddCustomer,
+  onNavigateToLogJob,
+  onNavigateToReports,
   onCustomerSaveSuccess,
   onQuoteTaskCompleted,
+  onJourneyComplete,
   workInProgressData
 }: ThirtyDayOnboardingSectionProps = {}) {
   // Get data from onboarding context, handling case where provider is not available
@@ -960,8 +970,12 @@ export function ThirtyDayOnboardingSection({
     isScheduled: false,
   })
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false)
   const [hasShownWizardCompletionPopup, setHasShownWizardCompletionPopup] = useState(false)
+
+  // Use external dialog state if provided, otherwise use internal state
+  const isDialogOpen = isOpen !== undefined ? isOpen : internalDialogOpen
+  const setIsDialogOpen = onOpenChange !== undefined ? onOpenChange : setInternalDialogOpen
 
   // Auto-progression state
   const [autoProgression, setAutoProgression] = useState(false)
@@ -1061,7 +1075,7 @@ export function ThirtyDayOnboardingSection({
       description: "Customize your system preferences and branding",
       icon: Settings,
       unlocked: false,
-      requiredTasks: ["explore-reports-section"], // Unlocks after exploring reports
+      requiredTasks: ["setup-job-types"], // Unlocks after configuring job types
       subsections: ["notifications", "branding", "mobile"]
     },
     {
@@ -1178,7 +1192,7 @@ export function ThirtyDayOnboardingSection({
         if (!hasShownWizardCompletionPopup) {
           setPopupContent({
             type: "wizard_complete",
-            title: "🎉 Get Started Wizard Complete!",
+            title: "🎉 Profile Setup Complete!",
             message: "Great job! You've completed the essential setup.",
             description: "The Customer Management section is now unlocked. Ready to add your first customer?"
           })
@@ -1231,7 +1245,7 @@ export function ThirtyDayOnboardingSection({
   const generateAdaptiveTasks = (learningPath: LearningPath, wipData: any): OnboardingTask[] => {
     const adaptiveTasks: OnboardingTask[] = []
     
-    // DAY 1: Get Started Wizard (Priority - Must Complete Day 1)
+    // DAY 1: Profile Setup (Priority - Must Complete Day 1)
     adaptiveTasks.push({
       id: "get-started-wizard",
       title: "🚀 Set Up Your Business Account",
@@ -1947,7 +1961,7 @@ export function ThirtyDayOnboardingSection({
     
     // Smart recommendations based on progress
     if (currentDay === 1 && !completedTasks.some(t => t.id === "get-started-wizard")) {
-      return "🚀 Start with the Get Started Wizard - it only takes 10 minutes and unlocks everything else!"
+      return "🚀 Start with the Profile Setup - it only takes 10 minutes and unlocks everything else!"
     }
     
     if (hasCustomers && !hasJobs && currentDay <= 5) {
@@ -1973,7 +1987,7 @@ export function ThirtyDayOnboardingSection({
     return null
   }
 
-  // Effect to sync task completion with get started wizard progress
+  // Effect to sync task completion with profile setup progress
   useEffect(() => {
     setTasks(prevTasks => 
       prevTasks.map(task => {
@@ -1996,12 +2010,12 @@ export function ThirtyDayOnboardingSection({
           }
         }
         
-        // Mark "First Customer Creation" task as completed when customer is created in get started wizard
+        // Mark "First Customer Creation" task as completed when customer is created in profile setup
         if (task.id === "7" && isCreatingCustomerCompleted && !task.completed) {
           return { ...task, completed: true }
         }
         
-        // Mark "Job Creation Mastery" task as completed when job is logged in get started wizard
+        // Mark "Job Creation Mastery" task as completed when job is logged in profile setup
         if (task.id === "12" && isLoggingJobCompleted && !task.completed) {
           return { ...task, completed: true }
         }
@@ -2122,6 +2136,13 @@ export function ThirtyDayOnboardingSection({
   }, [tasks, currentDay])
 
   const { completedTasks, totalTasks, overallProgress, isJourneyComplete } = progressMetrics
+
+  // Effect to notify parent when journey is completed
+  useEffect(() => {
+    if (isJourneyComplete && onJourneyComplete) {
+      onJourneyComplete()
+    }
+  }, [isJourneyComplete, onJourneyComplete])
 
   const weekMetrics = useMemo(() => {
     const currentWeek = Math.ceil(currentDay / 7)
@@ -2350,11 +2371,29 @@ export function ThirtyDayOnboardingSection({
   const handleTaskClick = (task: OnboardingTask) => {
     // Handle specific task navigation
     if (task.id === "add-first-customer-and-site" && onNavigateToAddCustomer) {
-      // Close the 30-day onboarding modal first
+      // Close the onboarding modal first
       setIsDialogOpen(false)
       // Navigate to add customer screen for the "Add Your First Customer" task
-      // This will close the 30-day onboarding window and show the add customer screen
+      // This will close the onboarding window and show the add customer screen
       onNavigateToAddCustomer()
+      return
+    }
+    
+    // Handle log scheduled job task navigation
+    if (task.id === "log-scheduled-job-with-allocation" && onNavigateToLogJob) {
+      // Close the onboarding modal first
+      setIsDialogOpen(false)
+      // Navigate to log job screen with guided tour for the "Log Scheduled Job with Full Allocation Details" task
+      onNavigateToLogJob(true) // true to start guided tour
+      return
+    }
+    
+    // Handle explore reports task navigation
+    if (task.id === "explore-reports-section" && onNavigateToReports) {
+      // Close the onboarding modal first
+      setIsDialogOpen(false)
+      // Navigate to reports screen with guided tour for the "Explore Reports Section & Business Insights" task
+      onNavigateToReports(true) // true to start guided tour
       return
     }
     
@@ -2580,7 +2619,7 @@ export function ThirtyDayOnboardingSection({
           >
             <div className="w-2 h-2 rounded-full mr-3 bg-gradient-to-r from-orange-400 to-red-500 animate-pulse" />
             <div className="flex flex-col items-start">
-              <span className="text-xs font-medium">30-Day Journey</span>
+              <span className="text-xs font-medium">Your Onboarding Journey</span>
               <span className="text-[10px] text-slate-400">
                 Level {experienceLevel} • Day {currentDay}
               </span>
@@ -2604,7 +2643,7 @@ export function ThirtyDayOnboardingSection({
                 <Calendar className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-xl font-bold">30-Day Business Setup Journey</div>
+                <div className="text-xl font-bold">Your Onboarding Journey</div>
                 <div className="text-sm text-gray-600 font-normal">
                   Level {experienceLevel} • {experiencePoints.toLocaleString()} XP • Day {currentDay} of 30
                 </div>
@@ -2634,7 +2673,7 @@ export function ThirtyDayOnboardingSection({
                       <Rocket className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-blue-900">
-                      Welcome to Your 30-Day Business Setup! 👋
+                      Welcome to Your Onboarding Journey! 👋
                     </h2>
                     <p className="text-blue-800 max-w-2xl mx-auto leading-relaxed">
                       This simple, step-by-step journey will help you set up Joblogic to manage your business efficiently. 
@@ -2664,7 +2703,7 @@ export function ThirtyDayOnboardingSection({
                 <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Trophy className="w-6 h-6 text-green-600" />🎉 Congratulations! Your 30-Day Journey is Complete!
+                      <Trophy className="w-6 h-6 text-green-600" />🎉 Congratulations! Your Onboarding Journey is Complete!
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -3182,7 +3221,7 @@ export function ThirtyDayOnboardingSection({
               </Card>
             </TabsContent>
 
-            {/* Work in Progress Dashboard - Always show, with 0 values when no data */}
+            {/* Your Current Workload Dashboard - Always show, with 0 values when no data */}
             <TabsContent value="wip" className="space-y-6">
               {/* Header for Small Business Context */}
               <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
@@ -3564,7 +3603,7 @@ export function ThirtyDayOnboardingSection({
                           <div>
                             <h4 className="font-medium text-blue-900 mb-1">Week 1: Organize Your Real Data</h4>
                             <p className="text-sm text-blue-700">
-                              We'll use your {actualWorkInProgressData?.totalJobs || 0} actual jobs to teach you the system. 
+                              We'll use your actual jobs to teach you the system. 
                               No fake examples - just your real business.
                             </p>
                           </div>
@@ -3645,7 +3684,7 @@ export function ThirtyDayOnboardingSection({
                             Update Job Status
                           </div>
                           <div className="text-sm text-gray-600 mt-1">
-                            Practice with your {actualWorkInProgressData?.counts?.inProgress || 0} active jobs
+                            Practice with your active jobs
                           </div>
                         </div>
                       </Button>
@@ -3747,7 +3786,7 @@ export function ThirtyDayOnboardingSection({
                       <Trophy className="w-16 h-16 text-green-600 mx-auto mb-4" />
                       <h3 className="text-xl font-bold text-green-800 mb-2">🎉 Journey Complete!</h3>
                       <p className="text-green-700 mb-4">
-                        Congratulations! You've completed your 30-day self-onboarding journey. No more tasks remaining -
+                        Congratulations! You've completed your onboarding journey. No more tasks remaining -
                         you're all set!
                       </p>
                       <p className="text-sm text-green-600">
@@ -3798,7 +3837,7 @@ export function ThirtyDayOnboardingSection({
                               <CheckCircle className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold text-green-800">🎉 Get Started Wizard Complete!</h4>
+                              <h4 className="font-semibold text-green-800">🎉 Profile Setup Complete!</h4>
                               <p className="text-sm text-green-700">
                                 Excellent! You've completed the essential setup. The Customer Management section is now unlocked.
                               </p>
@@ -3817,7 +3856,7 @@ export function ThirtyDayOnboardingSection({
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2">
                             <Database className="w-5 h-5 text-amber-600" />
-                            Work in Progress Update Status
+                            Your Current Workload Update Status
                             <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-300">
                               {tasks.filter(t => t.realJobData?.requiresWIP && t.completed).length}/{tasks.filter(t => t.realJobData?.requiresWIP).length} Updated
                             </Badge>

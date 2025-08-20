@@ -126,23 +126,29 @@ export function AboutYourBusinessScreen() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl">
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="w-12 h-12 bg-teal-500 rounded-lg flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-white" />
+    <div className="max-w-6xl mx-auto space-y-8">
+      {/* Enhanced Professional Header */}
+      <div className="text-center space-y-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl border border-teal-200 p-8">
+        <div className="flex items-center justify-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center">
+            <span className="text-white font-bold text-xl">1</span>
           </div>
+          <h1 className="text-3xl font-bold text-gray-900">Tell Us About You</h1>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">About Your Business</h1>
-        <p className="text-gray-600 max-w-2xl mx-auto">
-          Let's get your business set up quickly. Just a few essential details and you'll be ready to start using JobLogic.
+        <p className="text-lg text-gray-700 max-w-3xl mx-auto leading-relaxed">
+          Let's get your business set up quickly. Just a few essential details and 
+          you'll be ready to start using JobLogic with your team.
         </p>
+        <div className="flex items-center justify-center space-x-2 text-sm text-teal-700 bg-teal-100 rounded-full px-4 py-2 inline-flex">
+          <span className="w-2 h-2 bg-teal-500 rounded-full"></span>
+          <span>This sets up your company profile and regional settings</span>
+        </div>
       </div>
 
-      {/* Simplified Essential Information Form */}
-      <div className="max-w-2xl mx-auto space-y-6">
-        
+      <div className="space-y-8">
         {/* Essential Business Information */}
+        {/* <div className="max-w-2xl mx-auto"> */}
+        <div className="max-w-6xl mx-auto px-0">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -316,10 +322,11 @@ export function AboutYourBusinessScreen() {
             <div>
               <h3 className="text-sm font-medium text-teal-800">Pre-filled Information</h3>
               <p className="text-sm text-teal-700 mt-1">
-                Fields with green backgrounds and checkmarks have been pre-filled based on information from your sales consultation. You can edit any details if needed. Regional settings are pre-configured but can be adjusted for your specific location and preferences.
+                Fields with green backgrounds and checkmarks are auto-filled from public data. All details and regional settings can be edited to match your location and preferences.
               </p>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

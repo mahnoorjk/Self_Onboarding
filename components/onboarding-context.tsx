@@ -89,22 +89,6 @@ interface OnboardingData {
     }
     additionalInfo: string
   }
-  dataImport: {
-    needsImport: boolean
-    selectedModules: string[]
-    importMethod: string
-    credentials: any
-    uploadedFiles: any
-    templates: any
-  }
-  automationCustomization: {
-    needsCustomization: boolean
-    customizationTypes: string[]
-    customForms: any
-    customDashboards: any
-    documentTemplates: any
-    automations: string
-  }
   workInProgress: {
     hasWIPJobs: boolean
     counts: {
@@ -191,7 +175,8 @@ const electricalMaintenanceDashboards = [
 
 export function OnboardingProvider({ 
   children, 
-  initialRegistrationData 
+  initialRegistrationData,
+  initialStep = 1
 }: { 
   children: ReactNode
   initialRegistrationData?: {
@@ -201,8 +186,9 @@ export function OnboardingProvider({
     mobileNumber: string
     countryCode: string
   }
+  initialStep?: number
 }) {
-  const [currentStep, setCurrentStep] = useState(1)
+  const [currentStep, setCurrentStep] = useState(initialStep)
   const [data, setData] = useState<OnboardingData>({
     registration: initialRegistrationData || {
       name: "",
@@ -289,22 +275,6 @@ export function OnboardingProvider({
         financeIntegration: "no",
       },
       additionalInfo: "",
-    },
-    dataImport: {
-      needsImport: false,
-      selectedModules: [],
-      importMethod: "",
-      credentials: {},
-      uploadedFiles: {},
-      templates: {},
-    },
-    automationCustomization: {
-      needsCustomization: false,
-      customizationTypes: [],
-      customForms: {},
-      customDashboards: {},
-      documentTemplates: {},
-      automations: "",
     },
     workInProgress: {
       hasWIPJobs: false,

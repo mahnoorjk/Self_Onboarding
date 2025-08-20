@@ -3,26 +3,22 @@
 import { useOnboarding } from "./onboarding-context"
 import { Check } from "lucide-react"
 
-const steps = [
-  { number: 1, label: "About Your Business" },
-  { number: 2, label: "Your Services" },
-  { number: 3, label: "How You Work" },
-  { number: 4, label: "Work in Progress" }, // Covers internal step 4 (WIP Jobs)
-  { number: 5, label: "Transfer Data" }, // Covers internal steps 5 (Overview), 6 (Main), 7 (Software), 8 (Upload), 9 (Templates)
-  { number: 6, label: "Completion" }, // Covers internal step 10 (now includes review content)
-]
-
 export function ProgressBar() {
   const { currentStep } = useOnboarding()
 
+  const steps = [
+    { number: 1, title: "Tell Us About You", isActive: currentStep === 1, isCompleted: currentStep > 1 },
+    { number: 2, title: "Set Up Your Business", isActive: currentStep === 2, isCompleted: currentStep > 2 },
+    { number: 3, title: "Add Your Work", isActive: currentStep === 3, isCompleted: currentStep > 3 },
+    { number: 4, title: "Let's Get Started!", isActive: currentStep === 4, isCompleted: currentStep > 4 }
+  ];
+
   const getDisplayStep = (step: number) => {
-    if (step === 1) return 1 // About Your Business (1) -> Display Step 1
-    if (step === 2) return 2 // Your Services (2) -> Display Step 2
-    if (step === 3) return 3 // How You Work (3) -> Display Step 3
-    if (step === 4) return 4 // Work in Progress (4) -> Display Step 4
-    if (step >= 5 && step <= 9) return 5 // Transfer Data Overview (5), Transfer Data (6), Software (7), Upload (8), Templates (9) -> Display Step 5
-    if (step === 10) return 6 // Completion (10) -> Display Step 6
-    if (step === 11) return 6 // Tutorials (11) -> Still Display Step 6 (completion area)
+    if (step === 1) return 1 // Tell Us About You
+    if (step === 2) return 2 // Set Up Your Business (merged What Do You Do + How You Work)
+    if (step === 3) return 3 // Add Your Work (was Current Work)
+    if (step === 4) return 4 // Let's Get Started!
+    if (step === 5) return 4 // Tutorials (still show as completion)
     return step // Fallback
   }
 
@@ -36,44 +32,90 @@ export function ProgressBar() {
   const displayStep = getDisplayStep(currentStep)
 
   return (
-  <div className="bg-white border-b border-gray-200 px-6 py-6">
-    <div className="max-w-7xl mx-auto w-full px-4">
-      <div className="grid grid-cols-7 gap-0 w-full relative">
-        {steps.map((step, index) => {
-          const status = getStepStatus(step.number)
-          const isLast = index === steps.length - 1
+    <div className="bg-white border-b border-gray-200 shadow-sm">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Progress Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-lg font-semibold text-gray-800 mb-2">Setup Progress</h2>
+          <p className="text-sm text-gray-600">
+            Step {displayStep} of {steps.length} - {steps.find(s => s.number === displayStep)?.title}
+          </p>
+        </div>
 
-          const statusStyles =
-            status === "completed"
-              ? "bg-[#22C55E] text-white" // green complete
-              : status === "current"
-              ? "bg-[#FFC800] text-black font-semibold" // yellow active
-              : "bg-[#E5E7EB] text-[#6B7280]" // gray-200 pending
+        {/* Progress Bar */}
+        <div className="relative mb-6">
+          {/* Background line */}
+          <div className="absolute top-6 left-0 right-0 h-1 bg-gray-200 rounded-full"></div>
+          
+          {/* Progress fill */}
+          <div 
+            className="absolute top-6 left-0 h-1 bg-gradient-to-r from-teal-500 to-blue-500 rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${((displayStep - 1) / (steps.length - 1)) * 100}%` }}
+          ></div>
 
-          return (
-            <div key={step.number} className="flex flex-col items-center text-center relative">
-              {/* Connector line */}
-              {!isLast && (
-                <div className="absolute top-4 left-1/2 w-full h-px bg-gray-300 z-0"></div>
-              )}
+          {/* Steps */}
+          <div className="relative flex justify-between">
+            {steps.map((step, index) => {
+              const status = getStepStatus(step.number)
 
-              {/* Step Circle */}
-              <div className={`relative z-10 rounded-full w-8 h-8 flex items-center justify-center ${statusStyles}`}>
-                {status === "completed" ? (
-                  <Check className="w-4 h-4" />
-                ) : (
-                  step.number
-                )}
-              </div>
+              const circleStyles =
+                status === "completed"
+                  ? "bg-gradient-to-r from-teal-500 to-blue-500 text-white border-2 border-white shadow-lg transform scale-110"
+                  : status === "current"
+                  ? "bg-white text-teal-600 border-4 border-teal-500 shadow-lg transform scale-125 ring-4 ring-teal-100"
+                  : "bg-white text-gray-400 border-2 border-gray-300"
 
-              {/* Label */}
-              <div className="mt-2 text-xs font-medium text-gray-800">{step.label}</div>
-            </div>
-          )
-        })}
+              const labelStyles =
+                status === "completed"
+                  ? "text-teal-600 font-medium"
+                  : status === "current"
+                  ? "text-teal-700 font-semibold"
+                  : "text-gray-500"
+
+              return (
+                <div key={step.number} className="flex flex-col items-center">
+                  {/* Step Circle */}
+                  <div 
+                    className={`
+                      relative z-10 rounded-full w-12 h-12 flex items-center justify-center 
+                      transition-all duration-300 ease-out ${circleStyles}
+                    `}
+                  >
+                    {status === "completed" ? (
+                      <Check className="w-5 h-5 font-bold" />
+                    ) : (
+                      <span className="text-sm font-semibold">{step.number}</span>
+                    )}
+                  </div>
+
+                  {/* Step Label */}
+                  <div className={`mt-3 text-center transition-colors duration-300 ${labelStyles}`}>
+                    <div className="text-xs font-medium leading-tight max-w-[100px]">
+                      {step.title}
+                    </div>
+                    {status === "current" && (
+                      <div className="mt-1">
+                        <div className="w-2 h-2 bg-teal-500 rounded-full mx-auto animate-pulse"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Progress Stats */}
+        <div className="flex justify-center">
+          <div className="bg-gray-50 rounded-full px-4 py-2 flex items-center space-x-2">
+            <div className="w-3 h-3 bg-gradient-to-r from-teal-500 to-blue-500 rounded-full"></div>
+            <span className="text-sm font-medium text-gray-700">
+              {Math.round(((displayStep - 1) / (steps.length - 1)) * 100)}% Complete
+            </span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
 
 }
