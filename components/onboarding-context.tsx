@@ -3,6 +3,13 @@
 import { createContext, useContext, useState, type ReactNode } from "react"
 
 interface OnboardingData {
+  registration?: {
+    name: string
+    email: string
+    companyName: string
+    mobileNumber: string
+    countryCode: string
+  }
   companyOverview: {
     businessType: string
     companySize: string
@@ -81,22 +88,6 @@ interface OnboardingData {
       financeIntegration?: string
     }
     additionalInfo: string
-  }
-  dataImport: {
-    needsImport: boolean
-    selectedModules: string[]
-    importMethod: string
-    credentials: any
-    uploadedFiles: any
-    templates: any
-  }
-  automationCustomization: {
-    needsCustomization: boolean
-    customizationTypes: string[]
-    customForms: any
-    customDashboards: any
-    documentTemplates: any
-    automations: string
   }
   workInProgress: {
     hasWIPJobs: boolean
@@ -182,9 +173,30 @@ const electricalMaintenanceDashboards = [
   "PPM",
 ]
 
-export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const [currentStep, setCurrentStep] = useState(1)
+export function OnboardingProvider({ 
+  children, 
+  initialRegistrationData,
+  initialStep = 1
+}: { 
+  children: ReactNode
+  initialRegistrationData?: {
+    name: string
+    email: string
+    companyName: string
+    mobileNumber: string
+    countryCode: string
+  }
+  initialStep?: number
+}) {
+  const [currentStep, setCurrentStep] = useState(initialStep)
   const [data, setData] = useState<OnboardingData>({
+    registration: initialRegistrationData || {
+      name: "",
+      email: "",
+      companyName: "",
+      mobileNumber: "",
+      countryCode: "+44"
+    },
     companyOverview: {
       businessType: "Limited Company", // Default for UK Electrical Company
       companySize: "3-8 employees", // Default for UK Electrical Company
@@ -211,7 +223,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       selectedForms: [],
       selectedDashboards: [],
     },
-    teamRoles: [],
+    teamRoles: initialRegistrationData ? [{
+      fullName: initialRegistrationData.name,
+      role: "Project Manager",
+      email: initialRegistrationData.email,
+      phoneNumber: initialRegistrationData.countryCode + " " + initialRegistrationData.mobileNumber
+    }] : [],
     businessInformation: {
       businessVolumes: {
         numberOfCustomers: "",
@@ -259,22 +276,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       },
       additionalInfo: "",
     },
-    dataImport: {
-      needsImport: false,
-      selectedModules: [],
-      importMethod: "",
-      credentials: {},
-      uploadedFiles: {},
-      templates: {},
-    },
-    automationCustomization: {
-      needsCustomization: false,
-      customizationTypes: [],
-      customForms: {},
-      customDashboards: {},
-      documentTemplates: {},
-      automations: "",
-    },
     workInProgress: {
       hasWIPJobs: false,
       counts: null,
@@ -302,8 +303,47 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     })
   }
 
-  const isStepValid = (_step: number): boolean => {
-    return true
+  const isStepValid = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        // Validate required fields for About Your Business screen
+        const { companyName, businessAddress, phoneNumber, contactEmail } = data.companyDetails
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        
+        return !!(
+          companyName?.trim() &&
+          businessAddress?.trim() &&
+          phoneNumber?.trim() &&
+          contactEmail?.trim() &&
+          emailRegex.test(contactEmail)
+        )
+      case 2:
+        // Validate required fields for Your Services screen
+        const { selectedIndustries, customIndustry } = data.industryConfiguration
+        const { businessVolumes } = data.businessInformation
+        
+        // Check if industry is selected
+        const hasIndustry = selectedIndustries && selectedIndustries.length > 0
+        
+        // If "Other" is selected, check if custom industry is provided
+        const hasCustomIndustry = !selectedIndustries?.includes("Other") || (customIndustry && customIndustry.trim())
+        
+        // Check business volumes
+        const hasValidBusinessVolumes = businessVolumes && 
+          businessVolumes.numberOfCustomers && 
+          businessVolumes.numberOfEngineers && 
+          businessVolumes.numberOfJobs &&
+          Number(businessVolumes.numberOfCustomers) > 0 &&
+          Number(businessVolumes.numberOfEngineers) > 0 &&
+          Number(businessVolumes.numberOfJobs) > 0
+        
+        return !!(hasIndustry && hasCustomIndustry && hasValidBusinessVolumes)
+      case 3:
+        // Add validation for step 3 later
+        return true
+      default:
+        return true
+    }
   }
 
 

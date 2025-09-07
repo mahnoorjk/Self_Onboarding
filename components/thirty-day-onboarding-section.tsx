@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from "react"
+import { useOnboarding } from "./onboarding-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -51,7 +52,42 @@ import {
   Receipt,
   MapPin,
   Store,
+  AlertCircle,
+  CheckCircle2,
+  Timer,
+  Briefcase,
+  Eye,
+  RefreshCw,
 } from "lucide-react"
+
+// Utility functions for working days calculation
+const getWorkingDayInfo = (workingDay: number) => {
+  // Convert working day (1-20) to week and day within week
+  const week = Math.ceil(workingDay / 5)
+  const dayInWeek = ((workingDay - 1) % 5) + 1
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  const dayName = dayNames[dayInWeek - 1]
+  
+  return {
+    week,
+    dayInWeek,
+    dayName,
+    isWeekend: false // Working days are never weekends
+  }
+}
+
+const getCalendarDayFromWorkingDay = (workingDay: number, startDate = new Date()) => {
+  // Calculate actual calendar date including weekends
+  const totalDaysNeeded = workingDay + Math.floor((workingDay - 1) / 5) * 2 - 1
+  const calendarDate = new Date(startDate)
+  calendarDate.setDate(startDate.getDate() + totalDaysNeeded)
+  return calendarDate
+}
+
+const isWorkingDay = (date: Date) => {
+  const dayOfWeek = date.getDay()
+  return dayOfWeek >= 1 && dayOfWeek <= 5 // Monday = 1, Friday = 5
+}
 
 interface OnboardingTask {
   id: string
@@ -76,6 +112,7 @@ interface OnboardingTask {
     jobType?: string
     status?: string
     requiresWIP?: boolean
+    wipType?: "pending_quotes" | "in_progress_jobs" | "overdue_invoices" | "scheduled_jobs" | "customer_cleanup" | "complete_remaining" | "finalize_payments" | "organize_future"
   }
 }
 
@@ -137,6 +174,14 @@ interface ThirtyDayOnboardingSectionProps {
   isLoggingJobCompleted?: boolean
   isCreatingCustomerCompleted?: boolean
   isInitialOnboardingCompleted?: boolean
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  onNavigateToAddCustomer?: () => void
+  onNavigateToLogJob?: (withGuide?: boolean) => void
+  onNavigateToReports?: (withGuide?: boolean) => void
+  onCustomerSaveSuccess?: () => void
+  onQuoteTaskCompleted?: () => void
+  onJourneyComplete?: () => void
   workInProgressData?: {
     hasWIPJobs: boolean
     totalJobs: number
@@ -146,11 +191,31 @@ interface ThirtyDayOnboardingSectionProps {
       onHold: number
       awaitingParts: number
     }
-  }
+    customers?: {
+      total: number
+      withSites: number
+      withoutSites: number
+    }
+    sites?: {
+      total: number
+      withAssets: number
+      withoutAssets: number
+    }
+    invoices?: {
+      total: number
+      pending: number
+      overdue: number
+    }
+    quotes?: {
+      total: number
+      pending: number
+      expired: number
+    }
+  } | null
 }
 
 const onboardingTasks: OnboardingTask[] = [
-  // Week 1 (Days 1-7) - Foundation & Setup
+  // Week 1 (Days 1-5) - Foundation & Setup
   {
     id: "1",
     title: "Welcome & Account Setup",
@@ -287,13 +352,13 @@ const onboardingTasks: OnboardingTask[] = [
     difficulty: "beginner",
   },
 
-  // Week 2 (Days 8-14) - Core Operations
+  // Week 2 (Days 6-10) - Core Operations
   {
     id: "10",
     title: "Data Import Preparation",
     description: "Learn about data formats and import requirements",
     type: "tutorial",
-    day: 8,
+    day: 6,
     week: 2,
     completed: false,
     priority: "high",
@@ -307,7 +372,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Customer Data Import",
     description: "Import your existing customer database",
     type: "wizard",
-    day: 9,
+    day: 7,
     week: 2,
     completed: false,
     priority: "high",
@@ -320,10 +385,10 @@ const onboardingTasks: OnboardingTask[] = [
   },
   {
     id: "12",
-    title: "Create Your First Job",
+    title: "Bring Your Quote into the System",
     description: "Create your first complete job with all details",
     type: "practice",
-    day: 10,
+    day: 8,
     week: 2,
     completed: false,
     priority: "critical",
@@ -339,7 +404,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Advanced Job Management",
     description: "Learn scheduling, tracking, and job lifecycle management",
     type: "tutorial",
-    day: 11,
+    day: 9,
     week: 2,
     completed: false,
     priority: "high",
@@ -354,7 +419,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Integration Setup",
     description: "Connect accounting software and third-party tools",
     type: "wizard",
-    day: 12,
+    day: 10,
     week: 2,
     completed: false,
     priority: "medium",
@@ -395,13 +460,13 @@ const onboardingTasks: OnboardingTask[] = [
     difficulty: "intermediate",
   },
 
-  // Week 3 (Days 15-21) - Advanced Features & Automation
+  // Week 3 (Days 11-15) - Advanced Features & Automation
   {
     id: "17",
     title: "Workflow Automation Setup",
     description: "Configure automated workflows and notifications",
     type: "wizard",
-    day: 15,
+    day: 11,
     week: 3,
     completed: false,
     priority: "high",
@@ -417,7 +482,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Advanced Reporting Tutorial",
     description: "Master custom reports and analytics dashboards",
     type: "tutorial",
-    day: 16,
+    day: 12,
     week: 3,
     completed: false,
     priority: "high",
@@ -431,7 +496,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Custom Dashboard Creation",
     description: "Build personalized dashboards for your business metrics",
     type: "practice",
-    day: 17,
+    day: 13,
     week: 3,
     completed: false,
     priority: "medium",
@@ -447,7 +512,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Mobile App Configuration",
     description: "Set up and optimize mobile applications for field work",
     type: "practice",
-    day: 18,
+    day: 14,
     week: 3,
     completed: false,
     priority: "medium",
@@ -462,7 +527,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Advanced Customization Workshop",
     description: "Deep dive into custom fields, forms, and workflows",
     type: "wizard",
-    day: 19,
+    day: 15,
     week: 3,
     completed: false,
     priority: "medium",
@@ -477,8 +542,8 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Connect with Other Systems",
     description: "Advanced integration techniques and API usage",
     type: "tutorial",
-    day: 20,
-    week: 3,
+    day: 16,
+    week: 4,
     completed: false,
     priority: "low",
     estimatedTime: "30 min",
@@ -492,7 +557,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Week 3 Advanced Features Milestone",
     description: "Master advanced automation and customization",
     type: "milestone",
-    day: 21,
+    day: 15,
     week: 3,
     completed: false,
     priority: "critical",
@@ -504,13 +569,13 @@ const onboardingTasks: OnboardingTask[] = [
     difficulty: "advanced",
   },
 
-  // Week 4 (Days 22-30) - Optimization & Mastery
+  // Week 4 (Days 16-20) - Optimization & Mastery
   {
     id: "24",
     title: "Performance Analytics Deep Dive",
     description: "Analyze business performance and identify optimization opportunities",
     type: "practice",
-    day: 22,
+    day: 17,
     week: 4,
     completed: false,
     priority: "high",
@@ -526,7 +591,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Optimization Strategies Workshop",
     description: "Learn advanced optimization techniques for maximum efficiency",
     type: "tutorial",
-    day: 24,
+    day: 18,
     week: 4,
     completed: false,
     priority: "medium",
@@ -540,7 +605,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Team Training & Onboarding",
     description: "Train team members and create onboarding processes",
     type: "practice",
-    day: 26,
+    day: 19,
     week: 4,
     completed: false,
     priority: "medium",
@@ -555,7 +620,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Understand Your Business Reports",
     description: "Create complex multi-dimensional reports and forecasts",
     type: "practice",
-    day: 27,
+    day: 19,
     week: 4,
     completed: false,
     priority: "medium",
@@ -570,7 +635,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "System Optimization & Fine-tuning",
     description: "Final system optimization and performance tuning",
     type: "wizard",
-    day: 29,
+    day: 20,
     week: 4,
     completed: false,
     priority: "high",
@@ -583,10 +648,10 @@ const onboardingTasks: OnboardingTask[] = [
   },
   {
     id: "29",
-    title: "30-Day Journey Complete! 🎉",
+    title: "Your Onboarding Journey Complete! 🎉",
     description: "Congratulations! You're now ready to manage your business efficiently!",
     type: "milestone",
-    day: 30,
+    day: 20,
     week: 4,
     completed: false,
     priority: "critical",
@@ -594,7 +659,7 @@ const onboardingTasks: OnboardingTask[] = [
     category: "Milestones",
     points: 1000,
     prerequisites: ["23", "28"],
-    rewards: ["Joblogic Master Badge", "30-Day Champion", "Exclusive Access"],
+    rewards: ["Joblogic Master Badge", "Onboarding Champion", "Exclusive Access"],
     difficulty: "advanced",
   },
 
@@ -634,7 +699,7 @@ const onboardingTasks: OnboardingTask[] = [
     title: "Power User Challenge",
     description: "Complete 10 advanced tasks in a single day",
     type: "bonus",
-    day: 21,
+    day: 15,
     week: 3,
     completed: false,
     priority: "low",
@@ -750,7 +815,7 @@ const achievements: Achievement[] = [
   {
     id: "onboarding_legend",
     title: "Onboarding Legend",
-    description: "Complete the entire 30-day journey with excellence",
+    description: "Complete the entire onboarding journey with excellence",
     icon: Award,
     unlocked: false,
     points: 1500,
@@ -762,8 +827,8 @@ const achievements: Achievement[] = [
 const weeklyGoals: WeeklyGoal[] = [
   {
     week: 1,
-    title: "Get Started",
-    description: "Set up your business basics and add your first data",
+    title: "Profile Setup & Organize",
+    description: "Set up your business basics and organize your existing work",
     targetTasks: 6,
     completedTasks: 0,
     bonusPoints: 200,
@@ -771,27 +836,27 @@ const weeklyGoals: WeeklyGoal[] = [
   },
   {
     week: 2,
-    title: "Daily Operations",
-    description: "Learn to manage jobs, customers, and team members",
-    targetTasks: 5,
+    title: "Team & Workflow",
+    description: "Learn WIP lifecycle: engineer management, scheduling, mobile workflow, and invoicing",
+    targetTasks: 4,
     completedTasks: 0,
     bonusPoints: 300,
     completed: false,
   },
   {
     week: 3,
-    title: "Going Digital",
-    description: "Use mobile features and automate routine tasks",
-    targetTasks: 4,
+    title: "Digital Forms & Reports",
+    description: "Go paperless with digital forms, explore reports, and brand your documents",
+    targetTasks: 5,
     completedTasks: 0,
     bonusPoints: 400,
     completed: false,
   },
   {
     week: 4,
-    title: "Business Growth",
-    description: "Track performance and plan for business expansion",
-    targetTasks: 3,
+    title: "WIP Completion & Mastery",
+    description: "Complete outstanding work, finalize payments, and master your journey",
+    targetTasks: 5,
     completedTasks: 0,
     bonusPoints: 500,
     completed: false,
@@ -827,8 +892,62 @@ export function ThirtyDayOnboardingSection({
   isLoggingJobCompleted = false, 
   isCreatingCustomerCompleted = false,
   isInitialOnboardingCompleted = false,
+  isOpen,
+  onOpenChange,
+  onNavigateToAddCustomer,
+  onNavigateToLogJob,
+  onNavigateToReports,
+  onCustomerSaveSuccess,
+  onQuoteTaskCompleted,
+  onJourneyComplete,
   workInProgressData
 }: ThirtyDayOnboardingSectionProps = {}) {
+  // Get data from onboarding context, handling case where provider is not available
+  let contextData = null
+  let updateContextData = null
+  try {
+    const contextResult = useOnboarding()
+    contextData = contextResult.data
+    updateContextData = contextResult.updateData
+  } catch (error) {
+    // Context not available, will use prop data instead
+    contextData = null
+    updateContextData = null
+  }
+  
+  // Use work-in-progress data from context if available, otherwise fall back to prop
+  // Make this reactive to context changes using useMemo
+  const actualWorkInProgressData = useMemo(() => {
+    return contextData?.workInProgress?.hasWIPJobs ? {
+      hasWIPJobs: contextData.workInProgress.hasWIPJobs,
+      totalJobs: contextData.workInProgress.counts?.totalJobs || 0,
+      counts: {
+        inProgress: contextData.workInProgress.counts?.inProgress || 0,
+        scheduled: contextData.workInProgress.counts?.scheduled || 0,
+        onHold: contextData.workInProgress.counts?.onHold || 0,
+        awaitingParts: contextData.workInProgress.counts?.awaitingParts || 0,
+      },
+      quotes: {
+        total: contextData.workInProgress.counts?.pendingQuotes ? 
+          (contextData.workInProgress.counts.pendingQuotes + 
+           (contextData.workInProgress.counts.approvedQuotes || 0) + 
+           contextData.workInProgress.counts.rejectedQuotes + 
+           contextData.workInProgress.counts.expiredQuotes) : 0,
+        pending: contextData.workInProgress.counts?.pendingQuotes || 0,
+        expired: contextData.workInProgress.counts?.expiredQuotes || 0,
+      },
+      invoices: {
+        total: contextData.workInProgress.counts?.pendingInvoices ? 
+          (contextData.workInProgress.counts.pendingInvoices + 
+           contextData.workInProgress.counts.overdueInvoices + 
+           contextData.workInProgress.counts.paidInvoices + 
+           contextData.workInProgress.counts.draftInvoices) : 0,
+        pending: contextData.workInProgress.counts?.pendingInvoices || 0,
+        overdue: contextData.workInProgress.counts?.overdueInvoices || 0,
+      },
+    } : workInProgressData
+  }, [contextData, workInProgressData])
+
   // New state for left panel sections and learning path
   const [unlockedSections, setUnlockedSections] = useState<string[]>(["dashboard"]) // Dashboard starts unlocked
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null)
@@ -851,7 +970,12 @@ export function ThirtyDayOnboardingSection({
     isScheduled: false,
   })
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false)
   const [hasShownWizardCompletionPopup, setHasShownWizardCompletionPopup] = useState(false)
+
+  // Use external dialog state if provided, otherwise use internal state
+  const isDialogOpen = isOpen !== undefined ? isOpen : internalDialogOpen
+  const setIsDialogOpen = onOpenChange !== undefined ? onOpenChange : setInternalDialogOpen
 
   // Auto-progression state
   const [autoProgression, setAutoProgression] = useState(false)
@@ -869,14 +993,14 @@ export function ThirtyDayOnboardingSection({
       requiredTasks: [],
       subsections: ["overview", "metrics", "kpis"]
     },
-    // Week 1 (Days 2-7): Real Data Entry
+    // Week 1: Foundation Setup
     {
       id: "customers",
       name: "Customer Management",
       description: "Build and maintain your customer database",
       icon: Users,
       unlocked: false,
-      requiredTasks: ["get-started-wizard"], // Unlocks after Get Started wizard
+      requiredTasks: ["add-first-customer-and-site"], // Unlocks after adding first customer
       subsections: ["add", "manage", "history"]
     },
     {
@@ -885,7 +1009,7 @@ export function ThirtyDayOnboardingSection({
       description: "Manage customer sites and service locations",
       icon: MapPin,
       unlocked: false,
-      requiredTasks: ["organize-existing-customers", "create-first-customer"],
+      requiredTasks: ["add-first-customer-and-site"], // Unlocks after creating first customer and site
       subsections: ["sites", "locations", "mapping"]
     },
     {
@@ -894,7 +1018,7 @@ export function ThirtyDayOnboardingSection({
       description: "Create, manage, and track work orders efficiently",
       icon: FileText,
       unlocked: false,
-      requiredTasks: ["create-site-for-customer"],
+      requiredTasks: ["add-first-customer-and-site"], // Unlocks after customer and site creation
       subsections: ["create", "manage", "track"]
     },
     {
@@ -903,7 +1027,7 @@ export function ThirtyDayOnboardingSection({
       description: "Create professional quotes and estimates",
       icon: FileText,
       unlocked: false,
-      requiredTasks: ["create-first-job"],
+      requiredTasks: ["define-trades-specialties"], // Unlocks after defining trades and specialties
       subsections: ["create", "send", "convert"]
     },
     {
@@ -912,36 +1036,27 @@ export function ThirtyDayOnboardingSection({
       description: "Generate and manage invoices seamlessly",
       icon: Receipt,
       unlocked: false,
-      requiredTasks: ["cash-flow-tutorial"],
+      requiredTasks: ["convert-quote-to-job-track-progress"], // Unlocks after completing quote-to-job workflow
       subsections: ["generate", "send", "track"]
     },
-    // Week 2 (Days 8-14): Workforce & Work Orders
+    // Week 2: Team & Workflow
     {
       id: "engineers",
       name: "Engineers & Team",
       description: "Manage your workforce and assignments",
       icon: Users,
       unlocked: false,
-      requiredTasks: ["week1-mastery-check"],
+      requiredTasks: ["convert-quote-to-job-track-progress"], // Unlocks after completing Week 1 workflow
       subsections: ["team", "assignments", "mobile"]
     },
-    {
-      id: "assets",
-      name: "Asset Management",
-      description: "Track equipment and assets at customer sites",
-      icon: Package,
-      unlocked: false,
-      requiredTasks: ["add-first-engineer"],
-      subsections: ["equipment", "maintenance", "tracking"]
-    },
-    // Week 3 (Days 15-21): Forms, Invoices, Reports
+    // Week 3: Digital Forms & Reports
     {
       id: "forms",
       name: "Forms & Documentation",
       description: "Create and manage digital forms",
       icon: FileText,
       unlocked: false,
-      requiredTasks: ["add-asset-to-site"],
+      requiredTasks: ["add-first-engineer"], // Unlocks after adding first engineer
       subsections: ["create", "submit", "reports"]
     },
     {
@@ -950,17 +1065,17 @@ export function ThirtyDayOnboardingSection({
       description: "Generate insights with comprehensive reporting",
       icon: TrendingUp,
       unlocked: false,
-      requiredTasks: ["submit-job-form"],
+      requiredTasks: ["assign-form-to-job-and-complete-mobile"], // Unlocks after completing form assignment
       subsections: ["revenue", "jobs", "performance"]
     },
-    // Week 4 (Days 22-30): Mastery + Configuration
+    // Week 4: Customization & Integration
     {
       id: "settings",
       name: "Settings & Configuration",
-      description: "Customize your system preferences",
+      description: "Customize your system preferences and branding",
       icon: Settings,
       unlocked: false,
-      requiredTasks: ["view-first-report"],
+      requiredTasks: ["setup-job-types"], // Unlocks after configuring job types
       subsections: ["notifications", "branding", "mobile"]
     },
     {
@@ -969,7 +1084,7 @@ export function ThirtyDayOnboardingSection({
       description: "Explore integrations and marketplace apps",
       icon: Store,
       unlocked: false,
-      requiredTasks: ["customize-notifications"],
+      requiredTasks: ["brand-custom-templates-tutorial"], // Unlocks after branding tutorial
       subsections: ["integrations", "apps", "marketplace"]
     }
   ]
@@ -1000,10 +1115,10 @@ export function ThirtyDayOnboardingSection({
     let hasQuotes = false // Will be updated when quote data is available
     let totalItems = 0
 
-    if (workInProgressData) {
-      hasActiveJobs = workInProgressData.hasWIPJobs
-      totalJobs = workInProgressData.totalJobs
-      totalItems = totalJobs + (workInProgressData.counts?.inProgress || 0)
+    if (actualWorkInProgressData) {
+      hasActiveJobs = actualWorkInProgressData.hasWIPJobs
+      totalJobs = actualWorkInProgressData.totalJobs
+      totalItems = totalJobs + (actualWorkInProgressData.counts?.inProgress || 0)
     }
 
     let pathType: "hybrid" | "standard" | "accelerated"
@@ -1030,9 +1145,25 @@ export function ThirtyDayOnboardingSection({
     setLearningPath(newLearningPath)
     
     // Always generate adaptive tasks (will include WIP tasks if applicable)
-    const adaptiveTasks = generateAdaptiveTasks(newLearningPath, workInProgressData)
+    const adaptiveTasks = generateAdaptiveTasks(newLearningPath, actualWorkInProgressData)
     setTasks(adaptiveTasks)
-  }, [workInProgressData])
+  }, [actualWorkInProgressData])
+
+  // Handle customer save success - mark task as completed and unlock customer section
+  useEffect(() => {
+    if (isCreatingCustomerCompleted && onCustomerSaveSuccess) {
+      // Find and complete the customer creation task
+      const customerTask = tasks.find(t => t.id === "add-first-customer-and-site")
+      
+      if (customerTask && !customerTask.completed) {
+        // Mark the task as completed
+        handleTaskCompletion("add-first-customer-and-site")
+        
+        // Call the success callback
+        onCustomerSaveSuccess()
+      }
+    }
+  }, [isCreatingCustomerCompleted, tasks, onCustomerSaveSuccess])
 
   // Handle wizard completion - mark the get-started-wizard task as completed
   useEffect(() => {
@@ -1061,7 +1192,7 @@ export function ThirtyDayOnboardingSection({
         if (!hasShownWizardCompletionPopup) {
           setPopupContent({
             type: "wizard_complete",
-            title: "🎉 Get Started Wizard Complete!",
+            title: "🎉 Profile Setup Complete!",
             message: "Great job! You've completed the essential setup.",
             description: "The Customer Management section is now unlocked. Ready to add your first customer?"
           })
@@ -1114,11 +1245,11 @@ export function ThirtyDayOnboardingSection({
   const generateAdaptiveTasks = (learningPath: LearningPath, wipData: any): OnboardingTask[] => {
     const adaptiveTasks: OnboardingTask[] = []
     
-    // DAY 1: Get Started Wizard (Priority - Must Complete Day 1)
+    // DAY 1: Profile Setup (Priority - Must Complete Day 1)
     adaptiveTasks.push({
       id: "get-started-wizard",
-      title: "Complete Get Started Wizard",
-      description: "Essential setup for your Joblogic account - takes just 10 minutes!",
+      title: "🚀 Set Up Your Business Account",
+      description: "Quick 10-minute setup to get your business ready in Joblogic. We'll walk you through the basics!",
       type: "wizard",
       day: 1,
       week: 1,
@@ -1133,13 +1264,121 @@ export function ThirtyDayOnboardingSection({
       difficulty: "beginner"
     })
 
-    // WEEK 1 (Days 2-7): Real Data Entry
-    if (learningPath.hasWIPJobs) {
-      // For users with existing work
+    // WEEK 1 (Days 2-5): Work-in-Progress Guided Learning
+    if (learningPath.hasWIPJobs && wipData) {
+      // For users with existing work - guide them through their actual WIP data
+      
+      // Day 2: Handle Pending Quotes - Convert to Jobs
+      if (wipData.quotes?.pending > 0) {
       adaptiveTasks.push({
-        id: "organize-existing-customers",
-        title: "Organize Your Existing Customers",
-        description: `You have ${learningPath.totalJobs} jobs! Let's organize your customer data first.`,
+        id: "convert-pending-quote-to-job",
+        title: `💼 Follow Up on Your ${wipData.quotes.pending} Pending Quote${wipData.quotes.pending > 1 ? 's' : ''}`,
+        description: `You have quotes waiting for customer approval! Let's follow up with customers and turn those quotes into confirmed jobs. Real money is waiting!`,
+        type: "practice",
+        day: 2,
+        week: 1,
+        completed: false,
+        priority: "critical",
+        estimatedTime: "20 min",
+        leftPanelSection: "quotes",
+        unlocks: ["jobs"],
+        realJobData: { requiresWIP: true, wipType: "pending_quotes" },
+        points: 150,
+        category: "Operations",
+        difficulty: "beginner"
+      })
+      }
+
+      // Day 3: Handle In-Progress Jobs - Complete Setup
+      if (wipData.counts?.inProgress > 0) {
+        adaptiveTasks.push({
+          id: "complete-job-setup-in-progress",
+          title: `🚧 Organize Your ${wipData.counts.inProgress} Active Job${wipData.counts.inProgress > 1 ? 's' : ''} in Progress`,
+          description: `You have work happening right now! Let's make sure each job has complete customer info, correct addresses, and is assigned to the right person. Get organized!`,
+          type: "practice",
+          day: 3,
+          week: 1,
+          completed: false,
+          priority: "critical",
+          estimatedTime: "25 min",
+          leftPanelSection: "jobs",
+          unlocks: ["customers", "sites", "engineers"],
+          realJobData: { requiresWIP: true, wipType: "in_progress_jobs" },
+          points: 175,
+          category: "Operations",
+          difficulty: "intermediate"
+        })
+      }
+
+      // Day 4: Handle Overdue Invoices - Create and Share
+      if (wipData.invoices?.overdue > 0) {
+        adaptiveTasks.push({
+          id: "handle-overdue-invoices",
+          title: `💸 Chase Up ${wipData.invoices.overdue} Overdue Payment${wipData.invoices.overdue > 1 ? 's' : ''}`,
+          description: `You've done the work, now get paid! These customers owe you money for completed jobs. We'll help you send proper invoices and follow up professionally.`,
+          type: "practice",
+          day: 4,
+          week: 1,
+          completed: false,
+          priority: "critical",
+          estimatedTime: "20 min",
+          leftPanelSection: "invoicing",
+          unlocks: [],
+          realJobData: { requiresWIP: true, wipType: "overdue_invoices" },
+          points: 200,
+          category: "Operations",
+          difficulty: "intermediate"
+        })
+      }
+
+      // Day 5: Handle Scheduled Jobs - Assign and Plan
+      if (wipData.counts?.scheduled > 0) {
+        adaptiveTasks.push({
+          id: "assign-scheduled-jobs",
+          title: `📅 Assign Your ${wipData.counts.scheduled} Upcoming Job${wipData.counts.scheduled > 1 ? 's' : ''} to Workers`,
+          description: `You have work scheduled ahead! Let's make sure each upcoming job is assigned to the right person so nothing gets missed. Stay on top of your schedule!`,
+          type: "practice",
+          day: 5,
+          week: 1,
+          completed: false,
+          priority: "high",
+          estimatedTime: "18 min",
+          leftPanelSection: "engineers",
+          unlocks: [],
+          realJobData: { requiresWIP: true, wipType: "scheduled_jobs" },
+          points: 125,
+          category: "Operations",
+          difficulty: "beginner"
+        })
+      }
+
+      // Day 6: Handle Missing Customer/Site Data
+      adaptiveTasks.push({
+        id: "complete-customer-site-data",
+        title: "📋 Complete Missing Customer Information",
+        description: "Let's clean up your customer database! We'll help you fill in any missing contact details, addresses, and location info for your existing work.",
+        type: "practice",
+        day: 6,
+        week: 1,
+        completed: false,
+        priority: "high",
+        estimatedTime: "15 min",
+        leftPanelSection: "customers",
+        unlocks: ["sites"],
+        realJobData: { requiresWIP: true, wipType: "customer_cleanup" },
+        points: 100,
+        category: "Operations",
+        difficulty: "beginner"
+      })
+
+    } else {
+      // For new users without WIP data - comprehensive Week 1 workflow with quote foundation
+      
+      // Day 2: Customer & Site Creation (combined session)
+      adaptiveTasks.push({
+        id: "add-first-customer-and-site",
+        title: "Add Your First Customer & Site",
+        description: "Every job needs a customer and location! Add your first customer and we'll automatically set up their service location. This creates the foundation for all your work.",
         type: "tutorial",
         day: 2,
         week: 1,
@@ -1147,274 +1386,297 @@ export function ThirtyDayOnboardingSection({
         priority: "critical",
         estimatedTime: "15 min",
         leftPanelSection: "customers",
-        unlocks: ["sites"],
-        realJobData: { requiresWIP: true },
-        points: 75,
+        unlocks: ["customers", "sites"],
+        realJobData: { requiresWIP: false },
+        points: 120,
         category: "Operations",
         difficulty: "beginner"
       })
-    } else {
-      // For new users
+      
+      // Day 3: Service Categories Setup (3 sub-tasks)
       adaptiveTasks.push({
-        id: "create-first-customer",
-        title: "Add Your First Customer",
-        description: "Start by adding your first customer — we'll walk you through it step by step.",
+        id: "setup-job-types",
+        title: "🏷️ Configure Your Job Types",
+        description: "Set up job types that match your business: Emergency Call-outs, Planned Maintenance, Installations, Repairs, etc. This helps you organize different kinds of work.",
         type: "tutorial",
-        day: 2,
+        day: 3,
+        week: 1,
+        completed: false,
+        priority: "critical",
+        estimatedTime: "8 min",
+        leftPanelSection: "jobs",
+        unlocks: [],
+        realJobData: { requiresWIP: false },
+        points: 70,
+        category: "Setup & Learning",
+        difficulty: "beginner"
+      })
+      
+      adaptiveTasks.push({
+        id: "setup-job-categories",
+        title: "Set Up Your Service Categories",
+        description: "Define what services you offer: Plumbing, HVAC, Electrical, Cleaning, Handyman, etc. This helps customers understand what you do and helps you organize work.",
+        type: "tutorial",
+        day: 3,
         week: 1,
         completed: false,
         priority: "critical",
         estimatedTime: "10 min",
-        leftPanelSection: "customers",
-        unlocks: ["sites"],
+        leftPanelSection: "jobs",
+        unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 75,
-        category: "Operations",
+        points: 80,
+        category: "Setup & Learning",
         difficulty: "beginner"
       })
-    }
-
-    // Core Week 1 Tasks
-    adaptiveTasks.push(
-      {
-        id: "create-site-for-customer",
-        title: "Add a Site to Your Customer",
-        description: "Create a service location where you'll perform work.",
-        type: "practice",
+      
+      adaptiveTasks.push({
+        id: "define-trades-specialties",
+        title: "👷 Define Your Trades & Specialties",
+        description: "Set up your areas of expertise and skill levels. This helps you assign the right person to each job and quote accurately for different types of work.",
+        type: "tutorial",
         day: 3,
         week: 1,
         completed: false,
         priority: "high",
-        estimatedTime: "8 min",
-        leftPanelSection: "sites",
-        unlocks: ["jobs"],
+        estimatedTime: "10 min",
+        leftPanelSection: "jobs",
+        unlocks: ["quotes"],
         realJobData: { requiresWIP: false },
-        points: 60,
-        category: "Operations",
+        points: 80,
+        category: "Setup & Learning",
         difficulty: "beginner"
-      },
-      {
-        id: "create-first-job",
-        title: "Log Your First Job",
-        description: "Create a work order for your customer - the heart of your business!",
+      })
+      
+      // Day 4: Create Professional Quote
+      adaptiveTasks.push({
+        id: "create-first-professional-quote",
+        title: "Bring Your Quote into the System",
+        description: "Now that you have a customer, site, and service structure set up, let's create a professional quote! Use proper job types, categories, and pricing to win new business.",
         type: "practice",
         day: 4,
         week: 1,
         completed: false,
         priority: "critical",
-        estimatedTime: "12 min",
-        leftPanelSection: "jobs",
-        unlocks: ["quotes", "invoicing"],
+        estimatedTime: "15 min",
+        leftPanelSection: "quotes",
+        unlocks: ["jobs"],
         realJobData: { requiresWIP: false },
-        points: 100,
+        points: 120,
         category: "Operations",
-        difficulty: "beginner"
-      },
-      {
-        id: "cash-flow-tutorial",
-        title: "Turn Jobs into Cash (Quote or Invoice)",
-        description: "Learn how to create quotes or invoices - essential for getting paid!",
-        type: "tutorial",
+        difficulty: "intermediate"
+      })
+      
+      // Day 5: Go from Quote to Getting Paid
+      adaptiveTasks.push({
+        id: "convert-quote-to-job-track-progress",
+        title: "🎯 Go from Quote to Getting Paid",
+        description: "Turn your quote into an active job! Learn the complete workflow: quote approval → job creation → status updates → team assignment. This is your money-making process!",
+        type: "practice",
         day: 5,
         week: 1,
         completed: false,
-        priority: "high",
-        estimatedTime: "15 min",
-        leftPanelSection: "quotes",
-        unlocks: [],
+        priority: "critical",
+        estimatedTime: "18 min",
+        leftPanelSection: "jobs",
+        unlocks: ["invoicing"],
         realJobData: { requiresWIP: false },
-        points: 80,
+        points: 150,
         category: "Operations",
-        difficulty: "beginner"
-      },
-      {
-        id: "week1-mastery-check",
-        title: "Week 1 Mastery: Customer → Site → Job → Money",
-        description: "Verify you can complete the basic workflow from customer to cash.",
+        difficulty: "intermediate"
+      })
+    }
+
+    // Week 1 Mastery Check - Different for WIP vs New Users
+    if (learningPath.hasWIPJobs && wipData) {
+      adaptiveTasks.push({
+        id: "week1-wip-mastery-check",
+        title: "🎯 Week 1 Complete: Your Real Work is Now Organized!",
+        description: "Amazing! You've organized all your real work-in-progress in Joblogic. Your customers, jobs, quotes, and invoices are now properly tracked. Time for Week 2!",
         type: "milestone",
         day: 7,
         week: 1,
         completed: false,
         priority: "high",
-        estimatedTime: "5 min",
+        estimatedTime: "10 min",
         leftPanelSection: "dashboard",
         unlocks: ["engineers"],
-        realJobData: { requiresWIP: false },
-        points: 150,
+        realJobData: { requiresWIP: true, wipType: "customer_cleanup" },
+        points: 200,
         category: "Milestones",
         difficulty: "beginner"
-      }
-    )
+      })
+    }
 
-    // WEEK 2 (Days 8-14): Workforce & Work Orders
+    // WEEK 2 (Days 8-12): WIP Lifecycle & Customer Learning Through Real Work
     adaptiveTasks.push(
       {
         id: "add-first-engineer",
-        title: "Add Your First Engineer/Team Member",
-        description: "Set up your team - even if it's just you for now!",
+        title: "👷 Add Your Engineers & Team Members",
+        description: "Add all your field workers so you can properly assign and track work. Even if it's just you, set up your profile as an engineer!",
         type: "practice",
         day: 8,
         week: 2,
         completed: false,
         priority: "high",
-        estimatedTime: "8 min",
+        estimatedTime: "12 min",
         leftPanelSection: "engineers",
         unlocks: ["assets"],
         realJobData: { requiresWIP: false },
-        points: 70,
+        points: 80,
         category: "Operations",
         difficulty: "beginner"
       },
       {
-        id: "assign-job-to-engineer",
-        title: "Assign a Job to an Engineer",
-        description: "Learn how to dispatch work orders to your team.",
+        id: "log-scheduled-job-with-allocation",
+        title: "Log Scheduled Job with Full Allocation Details",
+        description: "Create a complete scheduled job with all sections: customer contacts, site assets, task breakdown, cost estimates, and job forms. Then assign it to your engineer!",
         type: "practice",
         day: 9,
         week: 2,
         completed: false,
-        priority: "medium",
-        estimatedTime: "10 min",
-        leftPanelSection: "engineers",
+        priority: "critical",
+        estimatedTime: "25 min",
+        leftPanelSection: "jobs",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 60,
+        points: 150,
         category: "Operations",
-        difficulty: "beginner"
+        difficulty: "intermediate"
       },
       {
-        id: "mobile-app-tutorial",
-        title: "Download & Set Up Mobile App",
-        description: "Essential for small teams - manage jobs on the go!",
+        id: "mobile-app-lifecycle-tutorial",
+        title: "📱 Mobile App: Download & Learn Visit Lifecycle",
+        description: "Download the mobile app and learn the field visit workflow: job arrival → task completion → photo capture → customer signature → job completion. Perfect for engineers on-site!",
         type: "tutorial",
         day: 10,
         week: 2,
         completed: false,
         priority: "high",
-        estimatedTime: "12 min",
+        estimatedTime: "18 min",
         leftPanelSection: "engineers",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 80,
+        points: 120,
         category: "Setup & Learning",
         difficulty: "beginner"
       },
       {
-        id: "add-asset-to-site",
-        title: "Add an Asset to a Customer Site",
-        description: "Track equipment you service - boilers, AC units, etc.",
+        id: "overdue-invoice-job-workflow",
+        title: "💰 Overdue Invoice: Log Job → Raise Invoice → Send Reminder",
+        description: "Practice the complete money collection workflow: log a job for completed work, create the invoice, and send a professional payment reminder email. Get paid faster!",
         type: "practice",
         day: 12,
         week: 2,
         completed: false,
-        priority: "medium",
-        estimatedTime: "10 min",
-        leftPanelSection: "assets",
+        priority: "critical",
+        estimatedTime: "20 min",
+        leftPanelSection: "invoicing",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 50,
+        points: 140,
         category: "Operations",
         difficulty: "intermediate"
       }
     )
 
-    // WEEK 3 (Days 15-21): Forms, Invoices, Reports
+    // WEEK 3 (Days 15-19): Digital Forms, Professional Documentation & Reports
     adaptiveTasks.push(
       {
-        id: "submit-job-form",
-        title: "Submit a Form from a Job",
-        description: "Use digital forms to capture job details and customer signatures.",
+        id: "assign-form-to-job-and-complete-mobile",
+        title: "📋 Assign Digital Form to Job & Complete on Mobile",
+        description: "Assign a digital form to a sample job or existing job, then complete it on your mobile device. Experience the paperless workflow your engineers will use on-site!",
         type: "practice",
         day: 15,
         week: 3,
         completed: false,
         priority: "high",
-        estimatedTime: "15 min",
+        estimatedTime: "20 min",
         leftPanelSection: "forms",
         unlocks: ["reports"],
         realJobData: { requiresWIP: false },
-        points: 70,
+        points: 120,
         category: "Growth & Automation",
         difficulty: "intermediate"
       },
       {
-        id: "view-first-report",
-        title: "View Your First Business Report",
-        description: "Check your Open Jobs or Revenue report - see your business at a glance!",
+        id: "create-basic-form-tutorial",
+        title: "Learn to Create Basic Digital Forms",
+        description: "Watch tutorial on creating custom forms for your business needs. Learn to build job completion forms, safety checklists, customer feedback forms, and more!",
+        type: "tutorial",
+        day: 16,
+        week: 3,
+        completed: false,
+        priority: "medium",
+        estimatedTime: "15 min",
+        leftPanelSection: "forms",
+        unlocks: [],
+        realJobData: { requiresWIP: false },
+        points: 80,
+        category: "Setup & Learning",
+        difficulty: "intermediate"
+      },
+      {
+        id: "explore-reports-section",
+        title: "📊 Explore Reports Section & Business Insights",
+        description: "Dive into the Reports section to understand your business performance. Check job completion rates, revenue trends, and engineer productivity metrics!",
         type: "practice",
         day: 17,
         week: 3,
         completed: false,
         priority: "medium",
-        estimatedTime: "8 min",
+        estimatedTime: "12 min",
         leftPanelSection: "reports",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 60,
+        points: 70,
         category: "Growth & Automation",
         difficulty: "beginner"
       },
       {
-        id: "generate-invoice-from-job",
-        title: "Generate Invoice from Completed Job",
-        description: "Complete the cycle - turn a finished job into money in the bank!",
+        id: "explore-default-document-templates",
+        title: "Explore Default Document Templates",
+        description: "Review the default invoice, quote, and job completion templates. Understand what's available out-of-the-box before customizing with your branding!",
         type: "practice",
-        day: 19,
+        day: 18,
         week: 3,
-        completed: false,
-        priority: "critical",
-        estimatedTime: "12 min",
-        leftPanelSection: "invoicing",
-        unlocks: [],
-        realJobData: { requiresWIP: false },
-        points: 100,
-        category: "Operations",
-        difficulty: "intermediate"
-      }
-    )
-
-    // WEEK 4 (Days 22-30): Mastery + Configuration
-    adaptiveTasks.push(
-      {
-        id: "customize-notifications",
-        title: "Set Up Your Notification Preferences",
-        description: "Configure email and mobile notifications that work for your business.",
-        type: "practice",
-        day: 22,
-        week: 4,
         completed: false,
         priority: "medium",
         estimatedTime: "10 min",
         leftPanelSection: "settings",
-        unlocks: ["marketplace"],
+        unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 50,
+        points: 60,
         category: "Setup & Learning",
         difficulty: "beginner"
       },
       {
-        id: "brand-customization",
-        title: "Add Your Company Branding",
-        description: "Make invoices and quotes look professional with your logo and colors.",
-        type: "practice",
-        day: 24,
-        week: 4,
+        id: "brand-custom-templates-tutorial",
+        title: "🎨 Brand Your Custom Templates",
+        description: "Watch tutorial on customizing document templates with your logo, colors, and branding. Make invoices and quotes look professional - stand out from competitors!",
+        type: "tutorial",
+        day: 19,
+        week: 3,
         completed: false,
-        priority: "medium",
-        estimatedTime: "15 min",
+        priority: "high",
+        estimatedTime: "18 min",
         leftPanelSection: "settings",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 60,
+        points: 100,
         category: "Growth & Automation",
         difficulty: "intermediate"
-      },
+      }
+    )
+
+    // WEEK 4 (Days 22-30): WIP Completion & Journey Mastery
+    adaptiveTasks.push(
       {
         id: "explore-marketplace",
-        title: "Explore Marketplace Integration",
-        description: "Optional: Check out integrations that could help your business grow.",
+        title: "Explore Marketplace & Integrations",
+        description: "Optional: Check out integrations that could help your business grow - connect with tools you already use like accounting software, payment processors, or CRM systems.",
         type: "tutorial",
-        day: 26,
+        day: 22,
         week: 4,
         completed: false,
         priority: "low",
@@ -1427,120 +1689,74 @@ export function ThirtyDayOnboardingSection({
         difficulty: "intermediate"
       },
       {
-        id: "journey-completion",
-        title: "🎉 Complete Your Joblogic Journey",
-        description: "Congratulations! You've mastered the essential workflows for your business.",
-        type: "milestone",
-        day: 30,
+        id: "complete-outstanding-wip-jobs",
+        title: "Complete Your Outstanding WIP Jobs",
+        description: "Time to finish what you started! Complete any remaining in-progress jobs, update job statuses, and ensure all your real work is properly tracked and invoiced.",
+        type: "practice",
+        day: 24,
+        week: 4,
+        completed: false,
+        priority: "critical",
+        estimatedTime: "30 min",
+        leftPanelSection: "jobs",
+        unlocks: [],
+        realJobData: { requiresWIP: true, wipType: "complete_remaining" },
+        points: 200,
+        category: "Operations",
+        difficulty: "intermediate"
+      },
+      {
+        id: "finalize-pending-invoices-payments",
+        title: "💰 Finalize All Pending Invoices & Payments",
+        description: "Get paid for your work! Send out any remaining invoices, follow up on overdue payments, and close the financial loop on all your completed jobs.",
+        type: "practice",
+        day: 26,
+        week: 4,
+        completed: false,
+        priority: "critical",
+        estimatedTime: "25 min",
+        leftPanelSection: "invoicing",
+        unlocks: [],
+        realJobData: { requiresWIP: true, wipType: "finalize_payments" },
+        points: 180,
+        category: "Operations",
+        difficulty: "intermediate"
+      },
+      {
+        id: "organize-future-scheduled-work",
+        title: "Organize Your Future Scheduled Work",
+        description: "Plan ahead for success! Review and properly organize all your upcoming scheduled jobs, ensure engineer assignments, and prepare for smooth operations going forward.",
+        type: "practice",
+        day: 28,
         week: 4,
         completed: false,
         priority: "high",
-        estimatedTime: "5 min",
+        estimatedTime: "20 min",
+        leftPanelSection: "jobs",
+        unlocks: [],
+        realJobData: { requiresWIP: true, wipType: "organize_future" },
+        points: 150,
+        category: "Operations",
+        difficulty: "intermediate"
+      },
+      {
+        id: "journey-completion-confirmation",
+        title: "🎉 Confirm Your Joblogic Journey Completion",
+        description: "Congratulations! You've mastered Joblogic and organized all your real work. Confirm your journey completion and celebrate your achievement - you're now ready to grow your business efficiently!",
+        type: "milestone",
+        day: 29,
+        week: 4,
+        completed: false,
+        priority: "critical",
+        estimatedTime: "10 min",
         leftPanelSection: "dashboard",
         unlocks: [],
         realJobData: { requiresWIP: false },
-        points: 200,
+        points: 250,
         category: "Milestones",
         difficulty: "beginner"
       }
     )
-
-    // Add WIP-specific tasks if user has work in progress
-    if (learningPath.hasWIPJobs && wipData) {
-      // Integrate WIP tasks into the learning path at strategic points
-      const wipSpecificTasks: OnboardingTask[] = [
-        {
-          id: "wip-status-update-week1",
-          title: "Update Your Job Status (Real Data Practice)",
-          description: `Practice with your ${wipData.totalJobs} existing jobs - update their status in Joblogic`,
-          type: "practice",
-          day: 3,
-          week: 1,
-          completed: false,
-          priority: "high",
-          estimatedTime: "20 min",
-          category: "Operations",
-          points: 150,
-          difficulty: "beginner",
-          leftPanelSection: "jobs",
-          unlocks: [],
-          realJobData: {
-            requiresWIP: true,
-            jobType: "status_update"
-          }
-        },
-        {
-          id: "wip-customer-cleanup",
-          title: "Clean Up Customer Data (From Your Jobs)",
-          description: "Review and organize customer information from your existing work",
-          type: "practice",
-          day: 4,
-          week: 1,
-          completed: false,
-          priority: "medium",
-          estimatedTime: "15 min",
-          category: "Operations",
-          points: 100,
-          difficulty: "beginner",
-          leftPanelSection: "customers",
-          unlocks: [],
-          realJobData: {
-            requiresWIP: true,
-            jobType: "customer_data"
-          }
-        }
-      ]
-
-      // Add conditional WIP tasks based on data
-      if (wipData.counts?.scheduled && wipData.counts.scheduled > 0) {
-        wipSpecificTasks.push({
-          id: "wip-scheduling-practice",
-          title: "Schedule Your Pending Jobs",
-          description: `Organize ${wipData.counts.scheduled} scheduled jobs in Joblogic`,
-          type: "practice",
-          day: 10,
-          week: 2,
-          completed: false,
-          priority: "high",
-          estimatedTime: "25 min",
-          category: "Operations",
-          points: 125,
-          difficulty: "intermediate",
-          leftPanelSection: "engineers",
-          unlocks: [],
-          realJobData: {
-            requiresWIP: true,
-            jobType: "scheduling"
-          }
-        })
-      }
-
-      if (wipData.counts?.inProgress && wipData.counts.inProgress > 0) {
-        wipSpecificTasks.push({
-          id: "wip-progress-tracking",
-          title: "Track Progress on Active Jobs",
-          description: `Update progress for ${wipData.counts.inProgress} active jobs`,
-          type: "practice",
-          day: 12,
-          week: 2,
-          completed: false,
-          priority: "medium",
-          estimatedTime: "20 min",
-          category: "Operations",
-          points: 100,
-          difficulty: "intermediate",
-          leftPanelSection: "jobs",
-          unlocks: [],
-          realJobData: {
-            requiresWIP: true,
-            jobType: "progress_tracking"
-          }
-        })
-      }
-
-      // Add WIP tasks to the main adaptive tasks array
-      adaptiveTasks.push(...wipSpecificTasks)
-    }
 
     return adaptiveTasks
   }
@@ -1578,6 +1794,29 @@ export function ThirtyDayOnboardingSection({
           })
           setShowPopup(true)
         }
+      }
+    }
+
+    // Special handling for quote completion - reset approved quotes count
+    if (task.id === "12" && updateContextData && contextData?.workInProgress?.counts) {
+      console.log('Updating approved quotes count to 0 for task:', task.id)
+      console.log('Current approved quotes:', contextData.workInProgress.counts.approvedQuotes)
+      
+      // Reset the approved quotes count to 0 when the quote task is completed
+      const updatedWorkInProgress = {
+        ...contextData.workInProgress,
+        counts: {
+          ...contextData.workInProgress.counts,
+          approvedQuotes: 0
+        }
+      }
+      updateContextData('workInProgress', updatedWorkInProgress)
+      
+      console.log('Updated approved quotes count to 0')
+      
+      // Unlock quotes section in main panel
+      if (onQuoteTaskCompleted) {
+        onQuoteTaskCompleted()
       }
     }
 
@@ -1622,25 +1861,13 @@ export function ThirtyDayOnboardingSection({
 
   // Handle weekly milestone completions and unlock next week's features
   const handleWeeklyMilestones = (task: OnboardingTask) => {
-    if (task.id === "week1-mastery-check") {
-      // Week 1 completed - unlock Week 2 features
-      const week2Sections = ["engineers", "assets"]
-      setUnlockedSections(prev => [...prev, ...week2Sections])
-      
-      setPopupContent({
-        type: "weekly_milestone",
-        title: "🚀 Week 1 Complete!",
-        message: "You've mastered the basics: Customer → Site → Job → Money!",
-        description: "Week 2 unlocked: Let's set up your team and equipment tracking."
-      })
-      setShowPopup(true)
-    } else if (task.week === 2 && task.type === "practice" && task.leftPanelSection === "assets") {
+    if (task.week === 2 && task.type === "practice" && task.leftPanelSection === "assets") {
       // Week 2 completion trigger
       checkWeekCompletion(2)
     } else if (task.leftPanelSection === "reports" && task.week === 3) {
       // Week 3 completion trigger
       checkWeekCompletion(3)
-    } else if (task.id === "journey-completion") {
+    } else if (task.id === "journey-completion-confirmation") {
       // Final completion
       setPopupContent({
         type: "journey_complete",
@@ -1718,23 +1945,23 @@ export function ThirtyDayOnboardingSection({
     const hasInvoices = completedTasks.some(t => t.leftPanelSection === "invoicing")
     
     // WIP-specific messages get priority - encourage learning through real data
-    if (workInProgressData?.hasWIPJobs) {
+    if (actualWorkInProgressData?.hasWIPJobs) {
       if (currentDay <= 3) {
-        return `📊 You have ${workInProgressData.totalJobs} existing jobs! Let's update them in Joblogic - you'll learn the system while organizing your real work.`
+        return `📊 You have ${actualWorkInProgressData?.totalJobs || 0} existing jobs! Let's update them in Joblogic - you'll learn the system while organizing your real work.`
       }
       
-      if (currentDay <= 5 && !hasInvoices && workInProgressData.counts?.inProgress) {
+      if (currentDay <= 5 && !hasInvoices && actualWorkInProgressData?.counts?.inProgress) {
         return "💰 Perfect timing to learn invoicing! Use your in-progress jobs to practice creating invoices - real data, real learning."
       }
       
-      if (currentDay <= 7 && workInProgressData.counts?.scheduled && workInProgressData.counts.scheduled > 0) {
+      if (currentDay <= 7 && actualWorkInProgressData?.counts?.scheduled && actualWorkInProgressData?.counts?.scheduled > 0) {
         return "📅 You have scheduled jobs waiting! Let's organize them properly in Joblogic's scheduling system."
       }
     }
     
     // Smart recommendations based on progress
     if (currentDay === 1 && !completedTasks.some(t => t.id === "get-started-wizard")) {
-      return "🚀 Start with the Get Started Wizard - it only takes 10 minutes and unlocks everything else!"
+      return "🚀 Start with the Profile Setup - it only takes 10 minutes and unlocks everything else!"
     }
     
     if (hasCustomers && !hasJobs && currentDay <= 5) {
@@ -1749,7 +1976,7 @@ export function ThirtyDayOnboardingSection({
       return `📋 You have ${learningPath.totalJobs} existing jobs! Focus on organizing them first - it'll make everything else easier.`
     }
     
-    if (currentWeek === 2 && !completedTasks.some(t => t.id === "mobile-app-tutorial")) {
+    if (currentWeek === 2 && !completedTasks.some(t => t.id === "mobile-app-lifecycle-tutorial")) {
       return "📱 Small teams need mobility! Set up the mobile app this week - manage jobs from anywhere."
     }
     
@@ -1760,7 +1987,7 @@ export function ThirtyDayOnboardingSection({
     return null
   }
 
-  // Effect to sync task completion with get started wizard progress
+  // Effect to sync task completion with profile setup progress
   useEffect(() => {
     setTasks(prevTasks => 
       prevTasks.map(task => {
@@ -1783,12 +2010,12 @@ export function ThirtyDayOnboardingSection({
           }
         }
         
-        // Mark "First Customer Creation" task as completed when customer is created in get started wizard
+        // Mark "First Customer Creation" task as completed when customer is created in profile setup
         if (task.id === "7" && isCreatingCustomerCompleted && !task.completed) {
           return { ...task, completed: true }
         }
         
-        // Mark "Job Creation Mastery" task as completed when job is logged in get started wizard
+        // Mark "Job Creation Mastery" task as completed when job is logged in profile setup
         if (task.id === "12" && isLoggingJobCompleted && !task.completed) {
           return { ...task, completed: true }
         }
@@ -1909,6 +2136,13 @@ export function ThirtyDayOnboardingSection({
   }, [tasks, currentDay])
 
   const { completedTasks, totalTasks, overallProgress, isJourneyComplete } = progressMetrics
+
+  // Effect to notify parent when journey is completed
+  useEffect(() => {
+    if (isJourneyComplete && onJourneyComplete) {
+      onJourneyComplete()
+    }
+  }, [isJourneyComplete, onJourneyComplete])
 
   const weekMetrics = useMemo(() => {
     const currentWeek = Math.ceil(currentDay / 7)
@@ -2134,6 +2368,39 @@ export function ThirtyDayOnboardingSection({
     setShowPopup(true)
   }
 
+  const handleTaskClick = (task: OnboardingTask) => {
+    // Handle specific task navigation
+    if (task.id === "add-first-customer-and-site" && onNavigateToAddCustomer) {
+      // Close the onboarding modal first
+      setIsDialogOpen(false)
+      // Navigate to add customer screen for the "Add Your First Customer" task
+      // This will close the onboarding window and show the add customer screen
+      onNavigateToAddCustomer()
+      return
+    }
+    
+    // Handle log scheduled job task navigation
+    if (task.id === "log-scheduled-job-with-allocation" && onNavigateToLogJob) {
+      // Close the onboarding modal first
+      setIsDialogOpen(false)
+      // Navigate to log job screen with guided tour for the "Log Scheduled Job with Full Allocation Details" task
+      onNavigateToLogJob(true) // true to start guided tour
+      return
+    }
+    
+    // Handle explore reports task navigation
+    if (task.id === "explore-reports-section" && onNavigateToReports) {
+      // Close the onboarding modal first
+      setIsDialogOpen(false)
+      // Navigate to reports screen with guided tour for the "Explore Reports Section & Business Insights" task
+      onNavigateToReports(true) // true to start guided tour
+      return
+    }
+    
+    // For other tasks, show task details
+    showTaskDetails(task)
+  }
+
   const handleScheduleCall = () => {
     if (callSchedule.selectedDate && callSchedule.selectedTime) {
       setCallSchedule((prev) => ({ ...prev, isScheduled: true }))
@@ -2266,6 +2533,47 @@ export function ThirtyDayOnboardingSection({
     }
   }
 
+  // Helper function to format WIP badge text
+  const getWipBadgeText = (task: OnboardingTask) => {
+    if (!task.realJobData?.requiresWIP) return null
+    
+    if (task.realJobData.wipType) {
+      const formatted = task.realJobData.wipType
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase())
+      return `Real Data: ${formatted}`
+    }
+    return 'Real Data'
+  }
+
+  // Helper function to get contextual descriptions for WIP tasks
+  const getContextualTaskDescription = (task: OnboardingTask) => {
+    if (!task.realJobData?.requiresWIP || !actualWorkInProgressData) {
+      return task.description
+    }
+
+    // Add specific context based on wipType
+    switch (task.realJobData.wipType) {
+      case "pending_quotes":
+        return `${task.description} You currently have ${actualWorkInProgressData.quotes?.pending || 0} quotes waiting for approval. We'll walk you through following up and converting them to active jobs.`
+        
+      case "in_progress_jobs":
+        return `${task.description} You have ${actualWorkInProgressData.counts?.inProgress || 0} jobs currently in progress. Let's ensure each one has proper customer details, site locations, and assigned engineers.`
+        
+      case "overdue_invoices":
+        return `${task.description} You have ${actualWorkInProgressData.invoices?.overdue || 0} overdue invoices that need attention. We'll help you create proper invoices for completed work and follow up with customers.`
+        
+      case "scheduled_jobs":
+        return `${task.description} You have ${actualWorkInProgressData.counts?.scheduled || 0} jobs that need to be scheduled and assigned. Let's organize your work pipeline properly.`
+        
+      case "customer_cleanup":
+        return `${task.description} Based on your existing jobs, we'll help you organize customer information and ensure all sites are properly set up for future work.`
+        
+      default:
+        return task.description
+    }
+  }
+
   // Auto-progression with realistic simulation
   useEffect(() => {
     let interval: NodeJS.Timeout
@@ -2303,7 +2611,7 @@ export function ThirtyDayOnboardingSection({
 
   return (
     <div>
-      <Dialog>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
           <Button
             variant="ghost"
@@ -2311,7 +2619,7 @@ export function ThirtyDayOnboardingSection({
           >
             <div className="w-2 h-2 rounded-full mr-3 bg-gradient-to-r from-orange-400 to-red-500 animate-pulse" />
             <div className="flex flex-col items-start">
-              <span className="text-xs font-medium">30-Day Journey</span>
+              <span className="text-xs font-medium">Your Onboarding Journey</span>
               <span className="text-[10px] text-slate-400">
                 Level {experienceLevel} • Day {currentDay}
               </span>
@@ -2335,7 +2643,7 @@ export function ThirtyDayOnboardingSection({
                 <Calendar className="w-5 h-5 text-white" />
               </div>
               <div>
-                <div className="text-xl font-bold">30-Day Business Setup Journey</div>
+                <div className="text-xl font-bold">Your Onboarding Journey</div>
                 <div className="text-sm text-gray-600 font-normal">
                   Level {experienceLevel} • {experiencePoints.toLocaleString()} XP • Day {currentDay} of 30
                 </div>
@@ -2344,8 +2652,12 @@ export function ThirtyDayOnboardingSection({
           </DialogHeader>
 
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+              <TabsTrigger value="wip" className="flex items-center gap-2">
+                <Briefcase className="w-4 h-4" />
+                Your Work
+              </TabsTrigger>
               <TabsTrigger value="today">Today</TabsTrigger>
               <TabsTrigger value="progress">Progress</TabsTrigger>
               <TabsTrigger value="achievements">Achievements</TabsTrigger>
@@ -2361,7 +2673,7 @@ export function ThirtyDayOnboardingSection({
                       <Rocket className="w-8 h-8 text-white" />
                     </div>
                     <h2 className="text-2xl font-bold text-blue-900">
-                      Welcome to Your 30-Day Business Setup! 👋
+                      Welcome to Your Onboarding Journey! 👋
                     </h2>
                     <p className="text-blue-800 max-w-2xl mx-auto leading-relaxed">
                       This simple, step-by-step journey will help you set up Joblogic to manage your business efficiently. 
@@ -2391,7 +2703,7 @@ export function ThirtyDayOnboardingSection({
                 <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Trophy className="w-6 h-6 text-green-600" />🎉 Congratulations! Your 30-Day Journey is Complete!
+                      <Trophy className="w-6 h-6 text-green-600" />🎉 Congratulations! Your Onboarding Journey is Complete!
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -2564,72 +2876,6 @@ export function ThirtyDayOnboardingSection({
                 </Card>
               )}
 
-              {/* Work in Progress Integration */}
-              {workInProgressData && workInProgressData.hasWIPJobs && (
-                <Card className="bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="w-5 h-5 text-amber-600" />
-                      Your Work in Progress
-                      <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-300">
-                        {workInProgressData.totalJobs} Jobs to Update
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* WIP Overview */}
-                      <div className="bg-amber-100 p-4 rounded-lg border border-amber-200">
-                        <div className="flex items-start gap-3">
-                          <Clipboard className="w-5 h-5 text-amber-700 mt-0.5" />
-                          <div>
-                            <h4 className="font-medium text-amber-900 text-sm mb-2">Learn by Doing with Your Real Work!</h4>
-                            <p className="text-amber-800 text-sm mb-3">
-                              You have {workInProgressData.totalJobs} existing jobs. Let's use them to learn Joblogic! 
-                              Each update teaches you the system while organizing your real business data.
-                            </p>
-                            {workInProgressData.counts && (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                <div className="bg-white p-2 rounded border border-amber-200">
-                                  <div className="text-lg font-bold text-amber-700">{workInProgressData.counts.inProgress || 0}</div>
-                                  <div className="text-xs text-amber-600">In Progress</div>
-                                </div>
-                                <div className="bg-white p-2 rounded border border-amber-200">
-                                  <div className="text-lg font-bold text-amber-700">{workInProgressData.counts.scheduled || 0}</div>
-                                  <div className="text-xs text-amber-600">Scheduled</div>
-                                </div>
-                                <div className="bg-white p-2 rounded border border-amber-200">
-                                  <div className="text-lg font-bold text-amber-700">{workInProgressData.counts.onHold || 0}</div>
-                                  <div className="text-xs text-amber-600">On Hold</div>
-                                </div>
-                                <div className="bg-white p-2 rounded border border-amber-200">
-                                  <div className="text-lg font-bold text-amber-700">{workInProgressData.counts.awaitingParts || 0}</div>
-                                  <div className="text-xs text-amber-600">Awaiting Parts</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress motivation */}
-                      <div className="bg-gradient-to-r from-amber-100 to-orange-100 p-3 rounded-lg border border-amber-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Star className="w-4 h-4 text-amber-600" />
-                          <span className="font-medium text-amber-900 text-sm">WIP Learning Benefits</span>
-                        </div>
-                        <ul className="text-xs text-amber-800 space-y-1">
-                          <li>✓ Learn by updating your real jobs - no dummy data!</li>
-                          <li>✓ Organize your existing work while mastering the system</li>
-                          <li>✓ See immediate value as your business gets more organized</li>
-                          <li>✓ Faster onboarding - you already know your business context</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Weekly Progress Overview */}
               <Card>
                 <CardHeader>
@@ -2651,7 +2897,7 @@ export function ThirtyDayOnboardingSection({
                           description: "Customer → Site → Job → Money",
                           sections: ["customers", "sites", "jobs", "quotes", "invoicing"],
                           color: "green",
-                          days: "Days 1-7"
+                          days: "Days 1-7 (Week 1)"
                         },
                         {
                           week: 2,
@@ -2659,7 +2905,7 @@ export function ThirtyDayOnboardingSection({
                           description: "Team setup & equipment tracking",
                           sections: ["engineers", "assets"],
                           color: "blue",
-                          days: "Days 8-14"
+                          days: "Days 8-14 (Week 2)"
                         },
                         {
                           week: 3,
@@ -2667,7 +2913,7 @@ export function ThirtyDayOnboardingSection({
                           description: "Mobile forms, reports & billing",
                           sections: ["forms", "reports"],
                           color: "purple",
-                          days: "Days 15-21"
+                          days: "Days 15-21 (Week 3)"
                         },
                         {
                           week: 4,
@@ -2675,7 +2921,7 @@ export function ThirtyDayOnboardingSection({
                           description: "Optimize settings & connect apps",
                           sections: ["settings", "marketplace"],
                           color: "orange",
-                          days: "Days 22-30"
+                          days: "Days 22-30 (Week 4)"
                         }
                       ].map((weekInfo) => {
                         const weekTasks = tasks.filter(t => t.week === weekInfo.week)
@@ -2824,16 +3070,17 @@ export function ThirtyDayOnboardingSection({
                 </CardContent>
               </Card>
 
-              {/* Business Setup Progress - Simplified */}
+              {/* Business Setup Progress - WIP-Focused */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Building className="w-5 h-5 text-blue-600" />
-                    Your Business Setup Progress
+                    Your Joblogic Setup Progress
                     <Badge variant="outline" className="ml-2 bg-blue-50 text-blue-700 border-blue-200">
-                      {leftPanelSections.filter(s => isSectionUnlocked(s.id)).length}/{leftPanelSections.length} Ready
+                      {leftPanelSections.filter(s => isSectionUnlocked(s.id)).length}/{leftPanelSections.length} Features Ready
                     </Badge>
                   </CardTitle>
+                  <p className="text-sm text-gray-600">Learn by organizing your real work and unlocking new features</p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
@@ -2974,6 +3221,562 @@ export function ThirtyDayOnboardingSection({
               </Card>
             </TabsContent>
 
+            {/* Your Current Workload Dashboard - Always show, with 0 values when no data */}
+            <TabsContent value="wip" className="space-y-6">
+              {/* Header for Small Business Context */}
+              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="p-6">
+                  <div className="text-center space-y-3">
+                    <div className="flex items-center justify-center gap-3">
+                      <Briefcase className="w-6 h-6 text-green-600" />
+                      <h2 className="text-xl font-bold text-green-800">Your Business at a Glance</h2>
+                    </div>
+                    <p className="text-green-700 max-w-2xl mx-auto">
+                      {actualWorkInProgressData ? 
+                        "Here's what we found in your business. We'll use this information to create personalized learning tasks that make sense for your actual work." :
+                        "Once you start adding data to your business, this section will show your actual work progress and help you manage everything efficiently."
+                      }
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-sm text-green-600">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{actualWorkInProgressData ? "Real data from your business • No made-up examples" : "Ready to track your business data"}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Jobs Overview - Always show */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Your Jobs & Work Orders
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">
+                    {actualWorkInProgressData ? "The actual work you have in your business right now" : "Track your jobs and work orders here"}
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">{actualWorkInProgressData?.totalJobs || 4}</div>
+                      <div className="text-sm text-blue-800">Total Jobs</div>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {actualWorkInProgressData?.counts?.inProgress || 3}
+                      </div>
+                      <div className="text-sm text-green-800">In Progress</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {actualWorkInProgressData?.counts?.scheduled || 1}
+                      </div>
+                      <div className="text-sm text-yellow-800">Scheduled</div>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {(actualWorkInProgressData?.counts?.onHold || 0) + (actualWorkInProgressData?.counts?.awaitingParts || 0)}
+                      </div>
+                      <div className="text-sm text-orange-800">On Hold</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lightbulb className="w-4 h-4 text-yellow-500" />
+                      <span className="font-medium text-sm">What we'll teach you:</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                      <li>• How to update job statuses quickly</li>
+                      <li>• Best ways to track job progress</li>
+                      <li>• Turn completed jobs into invoices (get paid!)</li>
+                      <li>• Schedule your team efficiently</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Customers Overview - Always show */}
+              {/* <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-green-600" />
+                    Your Customer Database
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">The customers you serve</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {workInProgressData?.customers?.total || 0}
+                      </div>
+                      <div className="text-sm text-green-800">Total Customers</div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {workInProgressData?.customers?.withSites || 0}
+                      </div>
+                      <div className="text-sm text-blue-800">With Site Locations</div>
+                    </div>
+                    <div className="bg-orange-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {workInProgressData?.customers?.withoutSites || 0}
+                      </div>
+                      <div className="text-sm text-orange-800">Need Site Setup</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium text-sm">We'll help you:</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                      <li>• Organize your customer information properly</li>
+                      <li>• Set up service locations for each customer</li>
+                      <li>• Track customer history and preferences</li>
+                      <li>• Build stronger customer relationships</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card> */}
+
+              {/* Financial Overview - Always show */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    Money & Paperwork
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Quotes, invoices, and getting paid</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Quotes & Estimates
+                      </h4>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className="bg-blue-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-blue-600">
+                            {actualWorkInProgressData?.quotes?.total || 3}
+                          </div>
+                          <div className="text-xs text-blue-800">Total</div>
+                        </div>
+                        <div className="bg-yellow-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-yellow-600">
+                            {actualWorkInProgressData?.quotes?.pending || 2}
+                          </div>
+                          <div className="text-xs text-yellow-800">Pending</div>
+                        </div>
+                        <div className="bg-green-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-green-600">
+                            {actualWorkInProgressData?.quotes ? 
+                              Math.max(0, actualWorkInProgressData.quotes.total - actualWorkInProgressData.quotes.pending - actualWorkInProgressData.quotes.expired) : 
+                              1}
+                          </div>
+                          <div className="text-xs text-green-800">Approved</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Receipt className="w-4 h-4" />
+                        Invoices & Payments
+                      </h4>
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className="bg-green-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-green-600">
+                            {actualWorkInProgressData?.invoices?.total || 2}
+                          </div>
+                          <div className="text-xs text-green-800">Total</div>
+                        </div>
+                        <div className="bg-yellow-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-yellow-600">
+                            {actualWorkInProgressData?.invoices?.pending || 1}
+                          </div>
+                          <div className="text-xs text-yellow-800">Pending</div>
+                        </div>
+                        <div className="bg-red-50 rounded p-3 text-center">
+                          <div className="text-lg font-bold text-red-600">
+                            {actualWorkInProgressData?.invoices?.overdue || 1}
+                          </div>
+                          <div className="text-xs text-red-800">Overdue</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-green-500" />
+                      <span className="font-medium text-sm">Money-making focus:</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                      <li>• Convert your quotes into jobs faster</li>
+                      <li>• Get paid quicker with automated invoicing</li>
+                      <li>• Follow up on overdue payments</li>
+                      <li>• Track your cash flow better</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Individual Quotes Section - Always show */}
+              {/* <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    Your Quotes & Estimates
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Turn quotes into jobs and grow your business</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-blue-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {workInProgressData?.quotes?.total || 0}
+                      </div>
+                      <div className="text-sm text-blue-800">Total Quotes</div>
+                      <div className="text-xs text-blue-600 mt-1">All quotes created</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {workInProgressData?.quotes?.pending || 0}
+                      </div>
+                      <div className="text-sm text-yellow-800">Pending Response</div>
+                      <div className="text-xs text-yellow-600 mt-1">Waiting for customer</div>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {workInProgressData?.quotes?.expired || 0}
+                      </div>
+                      <div className="text-sm text-red-800">Expired/Lost</div>
+                      <div className="text-xs text-red-600 mt-1">Need follow-up</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Target className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium text-sm">Quote management tips:</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                      <li>• Follow up on pending quotes within 2-3 days</li>
+                      <li>• Convert accepted quotes to jobs immediately</li>
+                      <li>• Review approved quotes for follow-up opportunities</li>
+                      <li>• Keep your quote templates updated and professional</li>
+                    </ul>
+                  </div>
+
+                  {!workInProgressData?.quotes && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 text-sm text-blue-800">
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          <strong>Getting started:</strong> Once you start creating quotes in Joblogic, 
+                          this section will show your actual quote data and help you track conversions.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {workInProgressData?.quotes && (workInProgressData?.quotes?.pending || 0) > 0 && (
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center gap-2 text-sm text-yellow-800">
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          <strong>Action needed:</strong> You have {workInProgressData?.quotes?.pending || 0} quotes waiting for customer response. 
+                          Following up can increase your conversion rate by 40%!
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card> */}
+
+              {/* Individual Invoices Section - Always show */}
+              {/* <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Receipt className="w-5 h-5 text-green-600" />
+                    Your Invoices & Payments
+                  </CardTitle>
+                  <p className="text-sm text-gray-600">Track payments and improve cash flow</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-green-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {workInProgressData?.invoices?.total || 0}
+                      </div>
+                      <div className="text-sm text-green-800">Total Invoices</div>
+                      <div className="text-xs text-green-600 mt-1">All invoices sent</div>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {workInProgressData?.invoices?.pending || 0}
+                      </div>
+                      <div className="text-sm text-yellow-800">Pending Payment</div>
+                      <div className="text-xs text-yellow-600 mt-1">Money on the way</div>
+                    </div>
+                    <div className="bg-red-50 rounded-lg p-4 text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {workInProgressData?.invoices?.overdue || 0}
+                      </div>
+                      <div className="text-sm text-red-800">Overdue</div>
+                      <div className="text-xs text-red-600 mt-1">Need attention</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-4 h-4 text-green-500" />
+                      <span className="font-medium text-sm">Cash flow improvements:</span>
+                    </div>
+                    <ul className="text-sm text-gray-600 space-y-1 ml-6">
+                      <li>• Send invoices immediately when jobs are complete</li>
+                      <li>• Set up payment reminders for due dates</li>
+                      <li>• Offer multiple payment methods (card, bank transfer)</li>
+                      <li>• Consider offering early payment discounts</li>
+                    </ul>
+                  </div>
+
+                  {!workInProgressData?.invoices && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>
+                          <strong>Ready to get paid:</strong> Once you start creating invoices in Joblogic, 
+                          this section will help you track payments and improve your cash flow.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {workInProgressData?.invoices && (workInProgressData?.invoices?.overdue || 0) > 0 && (
+                    <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                      <div className="flex items-center gap-2 text-sm text-red-800">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>
+                          <strong>Priority action:</strong> You have {workInProgressData?.invoices?.overdue || 0} overdue invoices. 
+                          Contact these customers today to improve your cash flow.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {workInProgressData?.invoices && (workInProgressData?.invoices?.pending || 0) > 0 && !(workInProgressData?.invoices?.overdue || 0) && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 text-sm text-green-800">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>
+                          <strong>Good news:</strong> You have {workInProgressData?.invoices?.pending || 0} invoices pending payment with no overdue items. 
+                          Your invoicing process is working well!
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card> */}
+
+                {/* Personalized Learning Plan */}
+                <Card className="border-2 border-blue-200 bg-blue-50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Rocket className="w-5 h-5 text-blue-600" />
+                      Your Personalized Learning Plan
+                    </CardTitle>
+                    <p className="text-sm text-blue-800">Based on your actual business data</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-100 rounded-full p-2">
+                            <span className="text-blue-600 font-bold text-sm">1</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-blue-900 mb-1">Week 1: Organize Your Real Data</h4>
+                            <p className="text-sm text-blue-700">
+                              We'll use your actual jobs to teach you the system. 
+                              No fake examples - just your real business.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-100 rounded-full p-2">
+                            <span className="text-blue-600 font-bold text-sm">2</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-blue-900 mb-1">Week 2: Streamline Your Workflow</h4>
+                            <p className="text-sm text-blue-700">
+                              Learn to manage your team and track job progress more efficiently.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white rounded-lg p-4 border border-blue-200">
+                        <div className="flex items-start gap-3">
+                          <div className="bg-blue-100 rounded-full p-2">
+                            <span className="text-blue-600 font-bold text-sm">3</span>
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-blue-900 mb-1">Week 3-4: Grow Your Business</h4>
+                            <p className="text-sm text-blue-700">
+                              Focus on getting paid faster, improving customer service, and planning for growth.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        <span className="font-medium text-green-800">Why this works for small businesses:</span>
+                      </div>
+                      <ul className="text-sm text-green-700 space-y-1">
+                        <li>• Learn using your actual data (not confusing examples)</li>
+                        <li>• Focus on tasks that directly help your business</li>
+                        <li>• Save time by learning what you actually need</li>
+                        <li>• See immediate results in your day-to-day work</li>
+                      </ul>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-purple-600" />
+                      Quick Actions with Your Data
+                    </CardTitle>
+                    <p className="text-sm text-gray-600">Practice with real examples from your business</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button 
+                        variant="outline" 
+                        className="h-auto p-4 justify-start"
+                        onClick={() => {
+                          setPopupContent({
+                            type: "learning_activity",
+                            title: "Update Job Status Practice",
+                            message: "Let's practice updating your real job statuses!",
+                            description: `We'll walk you through updating the status of your ${actualWorkInProgressData?.counts?.inProgress || 0} in-progress jobs.`
+                          })
+                          setShowPopup(true)
+                        }}
+                      >
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-2">
+                            <RefreshCw className="w-4 h-4" />
+                            Update Job Status
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Practice with your active jobs
+                          </div>
+                        </div>
+                      </Button>
+
+                      <Button 
+                        variant="outline" 
+                        className="h-auto p-4 justify-start"
+                        onClick={() => {
+                          setPopupContent({
+                            type: "learning_activity",
+                            title: "Customer Cleanup Workshop",
+                            message: "Let's organize your customer database!",
+                            description: "We'll help you clean up and organize your customer information properly."
+                          })
+                          setShowPopup(true)
+                        }}
+                      >
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            Organize Customers
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Clean up your customer database
+                          </div>
+                        </div>
+                      </Button>
+
+                      {actualWorkInProgressData?.counts?.scheduled && actualWorkInProgressData?.counts?.scheduled > 0 && (
+                        <Button 
+                          variant="outline" 
+                          className="h-auto p-4 justify-start"
+                          onClick={() => {
+                            setPopupContent({
+                              type: "learning_activity",
+                              title: "Schedule Your Team",
+                              message: "Let's organize your scheduled work!",
+                              description: `We'll help you properly schedule your ${actualWorkInProgressData?.counts?.scheduled || 0} pending jobs.`
+                            })
+                            setShowPopup(true)
+                          }}
+                        >
+                          <div className="text-left">
+                            <div className="font-medium flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              Schedule Jobs
+                            </div>
+                            <div className="text-sm text-gray-600 mt-1">
+                              Organize {actualWorkInProgressData?.counts?.scheduled || 0} scheduled jobs
+                            </div>
+                          </div>
+                        </Button>
+                      )}
+
+                      <Button 
+                        variant="outline" 
+                        className="h-auto p-4 justify-start"
+                        onClick={() => {
+                          setPopupContent({
+                            type: "learning_activity",
+                            title: "Invoice Creation Practice",
+                            message: "Turn jobs into money!",
+                            description: "Learn to create invoices from your completed jobs and get paid faster."
+                          })
+                          setShowPopup(true)
+                        }}
+                      >
+                        <div className="text-left">
+                          <div className="font-medium flex items-center gap-2">
+                            <Receipt className="w-4 h-4" />
+                            Create Invoices
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">
+                            Turn completed jobs into money
+                          </div>
+                        </div>
+                      </Button>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <div className="flex items-center gap-2 text-sm text-yellow-800">
+                        <AlertCircle className="w-4 h-4" />
+                        <span>
+                          <strong>Tip:</strong> These practice sessions use your actual business data, 
+                          so you'll learn by doing real work that helps your business immediately.
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
             <TabsContent value="today" className="space-y-4">
               <div className="space-y-6">
                 {/* Journey Complete Message for Today Tab */}
@@ -2983,7 +3786,7 @@ export function ThirtyDayOnboardingSection({
                       <Trophy className="w-16 h-16 text-green-600 mx-auto mb-4" />
                       <h3 className="text-xl font-bold text-green-800 mb-2">🎉 Journey Complete!</h3>
                       <p className="text-green-700 mb-4">
-                        Congratulations! You've completed your 30-day self-onboarding journey. No more tasks remaining -
+                        Congratulations! You've completed your onboarding journey. No more tasks remaining -
                         you're all set!
                       </p>
                       <p className="text-sm text-green-600">
@@ -3034,7 +3837,7 @@ export function ThirtyDayOnboardingSection({
                               <CheckCircle className="w-6 h-6 text-white" />
                             </div>
                             <div className="flex-1">
-                              <h4 className="font-semibold text-green-800">🎉 Get Started Wizard Complete!</h4>
+                              <h4 className="font-semibold text-green-800">🎉 Profile Setup Complete!</h4>
                               <p className="text-sm text-green-700">
                                 Excellent! You've completed the essential setup. The Customer Management section is now unlocked.
                               </p>
@@ -3053,7 +3856,7 @@ export function ThirtyDayOnboardingSection({
                         <CardHeader>
                           <CardTitle className="flex items-center gap-2">
                             <Database className="w-5 h-5 text-amber-600" />
-                            Work in Progress Update Status
+                            Your Current Workload Update Status
                             <Badge variant="outline" className="ml-2 bg-amber-100 text-amber-700 border-amber-300">
                               {tasks.filter(t => t.realJobData?.requiresWIP && t.completed).length}/{tasks.filter(t => t.realJobData?.requiresWIP).length} Updated
                             </Badge>
@@ -3080,7 +3883,7 @@ export function ThirtyDayOnboardingSection({
                             {/* Quick WIP actions */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                               <div className="bg-white p-3 rounded border border-amber-200">
-                                <div className="text-lg font-bold text-amber-700">{workInProgressData.totalJobs}</div>
+                                <div className="text-lg font-bold text-amber-700">{actualWorkInProgressData?.totalJobs || 0}</div>
                                 <div className="text-xs text-amber-600">Total Jobs</div>
                               </div>
                               <div className="bg-white p-3 rounded border border-amber-200">
@@ -3134,7 +3937,7 @@ export function ThirtyDayOnboardingSection({
                                   task.day < currentDay ? "bg-red-50 border-red-200" :
                                   "hover:border-teal-300 bg-teal-50 border-teal-200"
                                 } ${getTaskCardStyling(task)}`}
-                                onClick={() => showTaskDetails(task)}
+                                onClick={() => handleTaskClick(task)}
                               >
                                 <CardContent className="p-4">
                                   <div className="flex items-start justify-between">
@@ -3178,7 +3981,7 @@ export function ThirtyDayOnboardingSection({
                                           </h4>
                                           {getTaskBadges(task)}
                                         </div>
-                                        <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                                        <p className="text-sm text-gray-600 mb-2">{getContextualTaskDescription(task)}</p>
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <Badge className={getPriorityColor(task.priority)} variant="outline">
                                             {task.priority}
@@ -3260,7 +4063,7 @@ export function ThirtyDayOnboardingSection({
                                       ? 'border-blue-200 bg-blue-50' 
                                       : 'border-gray-200'
                                 }`}
-                                onClick={() => showTaskDetails(task)}
+                                onClick={() => handleTaskClick(task)}
                               >
                                 <CardContent className="p-4">
                                   <div className="flex items-start justify-between">
@@ -3354,78 +4157,75 @@ export function ThirtyDayOnboardingSection({
                     </div>
 
                     {/* Coming Up - Tasks from next week */}
-                    <div>
-                      <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <ArrowUp className="w-5 h-5 text-purple-600" />
-                        Coming Up Next Week (Week {Math.min(currentWeek + 1, 4)})
-                        {currentWeek >= 4 && (
-                          <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 border-green-200">
-                            Final Week!
-                          </Badge>
-                        )}
-                      </h3>
-                      <div className="space-y-2">
-                        {(() => {
-                          const nextWeek = Math.min(currentWeek + 1, 4)
-                          const nextWeekTasks = tasks.filter(task => task.week === nextWeek).slice(0, 6)
-                          
-                          return nextWeekTasks.length > 0 ? (
-                            nextWeekTasks.map((task) => (
-                              <Card
-                                key={task.id}
-                                className={`cursor-pointer hover:shadow-md transition-shadow opacity-75 hover:opacity-100 ${getTaskCardStyling(task)}`}
-                                onClick={() => showTaskDetails(task)}
-                              >
-                                <CardContent className="p-3">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                                        <span className="text-xs font-medium text-purple-700">D{task.day}</span>
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                          {getTypeIcon(task.type)}
-                                          <h4 className="font-medium text-sm">{task.title}</h4>
-                                          {task.priority === 'critical' && (
-                                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                                              Critical
-                                            </Badge>
-                                          )}
-                                          {task.realJobData?.requiresWIP && (
-                                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                                              Real Data
-                                            </Badge>
-                                          )}
-                                          {getTaskBadges(task)}
+                    {currentWeek < 4 && (
+                      <div>
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                          <ArrowUp className="w-5 h-5 text-purple-600" />
+                          Coming Up Next Week (Week {Math.min(currentWeek + 1, 4)})
+                        </h3>
+                        <div className="space-y-2">
+                          {(() => {
+                            const nextWeek = Math.min(currentWeek + 1, 4)
+                            const nextWeekTasks = tasks.filter(task => task.week === nextWeek).slice(0, 6)
+                            
+                            return nextWeekTasks.length > 0 ? (
+                              nextWeekTasks.map((task) => (
+                                <Card
+                                  key={task.id}
+                                  className={`cursor-pointer hover:shadow-md transition-shadow opacity-75 hover:opacity-100 ${getTaskCardStyling(task)}`}
+                                  onClick={() => handleTaskClick(task)}
+                                >
+                                  <CardContent className="p-3">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                                          <span className="text-xs font-medium text-purple-700">D{task.day}</span>
                                         </div>
-                                        <p className="text-xs text-gray-600">{task.description}</p>
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            {getTypeIcon(task.type)}
+                                            <h4 className="font-medium text-sm">{task.title}</h4>
+                                            {task.priority === 'critical' && (
+                                              <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                                Critical
+                                              </Badge>
+                                            )}
+                                            {task.realJobData?.requiresWIP && (
+                                              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                                                Real Data
+                                              </Badge>
+                                            )}
+                                            {getTaskBadges(task)}
+                                          </div>
+                                          <p className="text-xs text-gray-600">{task.description}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="flex items-center gap-1">
+                                          <Clock className="w-3 h-3" />
+                                          {task.estimatedTime}
+                                        </Badge>
+                                        <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                                          {task.points} pts
+                                        </Badge>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <Badge variant="outline" className="flex items-center gap-1">
-                                        <Clock className="w-3 h-3" />
-                                        {task.estimatedTime}
-                                      </Badge>
-                                      <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                                        {task.points} pts
-                                      </Badge>
-                                    </div>
-                                  </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            ) : (
+                              <Card>
+                                <CardContent className="p-6 text-center">
+                                  <Trophy className="w-12 h-12 text-gold-500 mx-auto mb-3" />
+                                  <h4 className="text-md font-semibold text-gray-700 mb-1">Journey Almost Complete!</h4>
+                                  <p className="text-sm text-gray-600">You're on the final stretch. Keep up the great work!</p>
                                 </CardContent>
                               </Card>
-                            ))
-                          ) : (
-                            <Card>
-                              <CardContent className="p-6 text-center">
-                                <Trophy className="w-12 h-12 text-gold-500 mx-auto mb-3" />
-                                <h4 className="text-md font-semibold text-gray-700 mb-1">Journey Almost Complete!</h4>
-                                <p className="text-sm text-gray-600">You're on the final stretch. Keep up the great work!</p>
-                              </CardContent>
-                            </Card>
-                          )
-                        })()}
+                            )
+                          })()}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -3518,47 +4318,81 @@ export function ThirtyDayOnboardingSection({
                       ))}
                     </div>
                     <div className="grid grid-cols-7 gap-2">
-                      {Array.from({ length: 30 }, (_, i) => {
-                        const day = i + 1
-                        const dayTasks = tasks.filter((t) => t.day === day && t.type !== "bonus")
-                        const completed = dayTasks.filter((t) => t.completed).length
-                        const total = dayTasks.length
-                        const isToday = day === currentDay
-                        const isPast = day < currentDay
-                        const isFuture = day > currentDay
-                        const completionRate = total > 0 ? (completed / total) * 100 : 0
+                      {/* Calculate the starting position - August 1, 2025 is a Friday (position 5) */}
+                      {(() => {
+                        const startDate = new Date(2025, 7, 1) // August 1, 2025
+                        const startDayOfWeek = startDate.getDay() // 0=Sunday, 1=Monday, ..., 6=Saturday
+                        const cells = []
+                        
+                        // Add empty cells for days before August 1st
+                        for (let i = 0; i < startDayOfWeek; i++) {
+                          cells.push(
+                            <div key={`empty-${i}`} className="w-12 h-12"></div>
+                          )
+                        }
+                        
+                        // Add the 30 days
+                        for (let i = 0; i < 30; i++) {
+                          const day = i + 1
+                          const dayTasks = tasks.filter((t) => t.day === day && t.type !== "bonus")
+                          const completed = dayTasks.filter((t) => t.completed).length
+                          const total = dayTasks.length
+                          const isToday = day === currentDay
+                          const isPast = day < currentDay
+                          const isFuture = day > currentDay
+                          const completionRate = total > 0 ? (completed / total) * 100 : 0
+                          
+                          // Calculate the actual date for this day
+                          const currentDate = new Date(2025, 7, day) // August day, 2025
+                          const dayOfWeek = currentDate.getDay() // 0=Sunday, 1=Monday, ..., 6=Saturday
+                          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 // Saturday (6) or Sunday (0)
+                          const isWorkingDay = !isWeekend
 
-                        return (
-                          <div
-                            key={day}
-                            className={`
-                              relative w-12 h-12 rounded-lg text-sm flex flex-col items-center justify-center font-medium cursor-pointer transition-all
-                              ${isToday ? "bg-teal-600 text-white ring-2 ring-teal-300 shadow-lg" : ""}
-                              ${isPast && completionRate === 100 ? "bg-green-500 text-white" : ""}
-                              ${isPast && completionRate > 0 && completionRate < 100 ? "bg-yellow-500 text-white" : ""}
-                              ${isPast && completionRate === 0 ? "bg-red-200 text-red-700" : ""}
-                              ${isFuture ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : ""}
-                              ${total === 0 ? "bg-gray-50 text-gray-300" : ""}
-                            `}
-                            title={`Day ${day}: ${completed}/${total} tasks completed (${Math.round(completionRate)}%)`}
-                            onClick={() => setCurrentDay(day)}
-                          >
-                            <span className="text-xs">{day}</span>
-                            {total > 0 && (
-                              <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
-                                <div className="flex gap-0.5">
-                                  {Array.from({ length: Math.min(total, 3) }, (_, i) => (
-                                    <div
-                                      key={i}
-                                      className={`w-1 h-1 rounded-full ${i < completed ? "bg-white" : "bg-white/30"}`}
-                                    />
-                                  ))}
+                          
+                          cells.push(
+                            <div
+                              key={day}
+                              className={`
+                                relative w-12 h-12 rounded-lg text-sm flex flex-col items-center justify-center font-medium transition-all
+                                ${isWeekend ? "bg-gray-100 text-gray-400 cursor-not-allowed opacity-60" : "cursor-pointer"}
+                                ${!isWeekend && isToday ? "bg-teal-600 text-white ring-2 ring-teal-300 shadow-lg" : ""}
+                                ${!isWeekend && isPast && completionRate === 100 ? "bg-green-500 text-white" : ""}
+                                ${!isWeekend && isPast && completionRate > 0 && completionRate < 100 ? "bg-yellow-500 text-white" : ""}
+                                ${!isWeekend && isPast && completionRate === 0 && total > 0 ? "bg-red-200 text-red-700" : ""}
+                                ${!isWeekend && isFuture ? "bg-gray-100 text-gray-500 hover:bg-gray-200" : ""}
+                                ${!isWeekend && total === 0 ? "bg-gray-50 text-gray-300" : ""}
+                              `}
+                              title={
+                                isWeekend 
+                                  ? `Day ${day}: Weekend (No tasks scheduled)` 
+                                  : `Day ${day}: ${completed}/${total} tasks completed (${Math.round(completionRate)}%)`
+                              }
+                              onClick={() => !isWeekend && setCurrentDay(day)}
+                            >
+                              <span className="text-xs">{day}</span>
+                              {isWeekend && (
+                                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                  <span className="text-[8px] text-gray-400">•</span>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      })}
+                              )}
+                              {!isWeekend && total > 0 && (
+                                <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2">
+                                  <div className="flex gap-0.5">
+                                    {Array.from({ length: Math.min(total, 3) }, (_, i) => (
+                                      <div
+                                        key={i}
+                                        className={`w-1 h-1 rounded-full ${i < completed ? "bg-white" : "bg-white/30"}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        }
+                        
+                        return cells
+                      })()}
                     </div>
                     <div className="flex items-center justify-center gap-6 mt-6 text-xs">
                       <div className="flex items-center gap-2">
@@ -3576,6 +4410,10 @@ export function ThirtyDayOnboardingSection({
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-red-200 rounded"></div>
                         <span>Missed</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-gray-100 rounded border border-gray-300"></div>
+                        <span>Weekend</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-gray-100 rounded"></div>

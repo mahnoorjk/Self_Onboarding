@@ -128,7 +128,7 @@ export function UploadDataFilesScreen() {
       </div>
 
       <div className="space-y-8">
-        {relevantTemplates.length > 0 && (
+        {/* {relevantTemplates.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Download Templates</CardTitle>
@@ -170,7 +170,7 @@ export function UploadDataFilesScreen() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         <Card>
           <CardHeader>

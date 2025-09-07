@@ -3,14 +3,7 @@
 import { useOnboarding } from "../onboarding-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar } from "lucide-react"
+import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap } from "lucide-react"
 import { useState } from "react"
 
 interface CompletionScreenProps {
@@ -18,13 +11,6 @@ interface CompletionScreenProps {
   onNavigateToTutorials?: () => void
   onNavigateToThirtyDayJourney?: () => void
   setShowOnboardingModal?: (show: boolean) => void
-  onNavigateToAddCustomer?: (showGuide?: boolean) => void
-  onNavigateToLogJob?: (showGuide?: boolean) => void
-  onNavigateToLogQuote?: (showGuide?: boolean) => void
-  onNavigateToReports?: (showGuide?: boolean) => void
-  onTaskCompleted?: (taskId: string) => void
-  completedTasks?: string[]
-  onNavigateToInvoiceTutorial?: () => void
 }
 
 interface ActionTask {
@@ -38,30 +24,16 @@ interface ActionTask {
   onClick: () => void
 }
 
-export function CompletionScreen({ 
-  onOnboardingCompletion, 
-  onNavigateToTutorials, 
-  onNavigateToThirtyDayJourney, 
-  setShowOnboardingModal,
-  onNavigateToAddCustomer,
-  onNavigateToLogJob,
-  onNavigateToLogQuote,
-  onNavigateToReports,
-  onTaskCompleted,
-  completedTasks = [],
-  onNavigateToInvoiceTutorial
-}: CompletionScreenProps = {}) {
+export function CompletionScreen({ onOnboardingCompletion, onNavigateToTutorials, onNavigateToThirtyDayJourney, setShowOnboardingModal }: CompletionScreenProps = {}) {
   const { setCurrentStep, data } = useOnboarding()
-  const [showVideoModal, setShowVideoModal] = useState(false)
+  const [completedTasks, setCompletedTasks] = useState<string[]>([])
 
   const handleGoBack = () => {
-    setCurrentStep(3) // Go back to Work in Progress screen (now step 3)
+    setCurrentStep(4) // Go back to Work in Progress screen
   }
 
   const markTaskCompleted = (taskId: string) => {
-    if (onTaskCompleted) {
-      onTaskCompleted(taskId)
-    }
+    setCompletedTasks(prev => [...prev, taskId])
   }
 
   const hasWIPJobs = data.workInProgress?.hasWIPJobs
@@ -74,7 +46,7 @@ export function CompletionScreen({
   const actionTasks: ActionTask[] = [
     {
       id: "add-customer",
-      title: "Add a Customer",
+      title: "Add Your First Customer",
       description: hasWIPJobs 
         ? "Bring one of your real customers into the system"
         : "Create a sample customer to get started",
@@ -83,13 +55,7 @@ export function CompletionScreen({
       isRequired: true,
       status: completedTasks.includes("add-customer") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Add customer task clicked, onNavigateToAddCustomer:", !!onNavigateToAddCustomer)
-        if (onNavigateToAddCustomer) {
-          console.log("Calling onNavigateToAddCustomer with guided tour")
-          onNavigateToAddCustomer(true)
-        } else {
-          console.log("Navigate to add customer - no navigation function provided")
-        }
+        console.log("Navigate to add customer")
         markTaskCompleted("add-customer")
       }
     },
@@ -104,40 +70,26 @@ export function CompletionScreen({
       isRequired: true,
       status: completedTasks.includes("create-quote") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Create quote task clicked, onNavigateToLogQuote:", !!onNavigateToLogQuote)
-        if (onNavigateToLogQuote) {
-          console.log("Calling onNavigateToLogQuote with guided tour")
-          onNavigateToLogQuote(true)
-        } else {
-          console.log("Navigate to quote creation - no navigation function provided")
-        }
+        console.log("Navigate to quote creation")
         markTaskCompleted("create-quote")
       }
     },
     {
-      id: "create-job",
-      title: hasActiveJobs ? "Add Your Active Jobs" : "Create a Job",
-      description: hasActiveJobs
-        ? `Bring your ${wipCounts?.inProgress || 0} active and ${wipCounts?.scheduled || 0} scheduled jobs into the system`
-        : "Set up a job from start to finish - the core of your business workflow",
+      id: "quote-to-job",
+      title: "Turn Quote into Job",
+      description: "Experience the full workflow from quote approval to job creation",
       icon: TrendingUp,
       estimatedTime: "4 min",
       isRequired: true,
-      status: completedTasks.includes("create-job") ? 'completed' : 'pending',
+      status: completedTasks.includes("quote-to-job") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Create job task clicked, onNavigateToLogJob:", !!onNavigateToLogJob)
-        if (onNavigateToLogJob) {
-          console.log("Calling onNavigateToLogJob with guided tour")
-          onNavigateToLogJob(true)
-        } else {
-          console.log("Navigate to job creation - no navigation function provided")
-        }
-        markTaskCompleted("create-job")
+        console.log("Navigate to quote-to-job workflow")
+        markTaskCompleted("quote-to-job")
       }
     },
     {
       id: "create-invoice",
-      title: hasInvoices ? "Send Your Pending Invoice" : "Create an Invoice",
+      title: hasInvoices ? "Send Your Pending Invoice" : "Create Your First Invoice",
       description: hasInvoices
         ? `Get those ${wipCounts?.pendingInvoices} invoice${wipCounts?.pendingInvoices !== 1 ? 's' : ''} sent out`
         : "Learn how to get paid faster with professional invoicing",
@@ -147,7 +99,6 @@ export function CompletionScreen({
       status: completedTasks.includes("create-invoice") ? 'completed' : 'pending',
       onClick: () => {
         console.log("Navigate to invoice creation")
-        setShowVideoModal(true)
         markTaskCompleted("create-invoice")
       }
     },
@@ -160,13 +111,7 @@ export function CompletionScreen({
       isRequired: false,
       status: completedTasks.includes("explore-reports") ? 'completed' : 'pending',
       onClick: () => {
-        console.log("Reports task clicked, onNavigateToReports:", !!onNavigateToReports)
-        if (onNavigateToReports) {
-          console.log("Calling onNavigateToReports with guided tour")
-          onNavigateToReports(true)
-        } else {
-          console.log("Navigate to reports - no navigation function provided")
-        }
+        console.log("Navigate to reports")
         markTaskCompleted("explore-reports")
       }
     }
@@ -212,7 +157,7 @@ export function CompletionScreen({
                 <h3 className="font-semibold text-purple-800 mb-1">Perfect! You have real work to bring into the system</h3>
                 <p className="text-purple-700 text-sm">
                   We'll help you get your actual workload ({wipCounts?.inProgress || 0} active jobs, {wipCounts?.pendingQuotes || 0} quotes, {wipCounts?.pendingInvoices || 0} invoices) 
-                  into Joblogic so you can start managing everything in one place.
+                  into JobLogic so you can start managing everything in one place.
                 </p>
               </div>
             </div>
@@ -228,7 +173,7 @@ export function CompletionScreen({
             Let's Get You Started
           </CardTitle>
           <CardDescription>
-            Complete these tasks to get your work into Joblogic and start using the system with {hasWIPJobs ? 'your real work' : 'sample scenarios'}
+            Complete these tasks to get your work into JobLogic and start using the system with {hasWIPJobs ? 'your real work' : 'sample scenarios'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -439,126 +384,50 @@ export function CompletionScreen({
         </CardContent>
       </Card>
 
-      {/* Level 2 Preview - Always Visible */}
-      <Card className={`transition-all duration-300 ${
-        completedRequiredTasks.length === requiredTasks.length 
-          ? 'border-blue-200 bg-blue-50 hover:border-blue-300 cursor-pointer' 
-          : 'border-gray-200 bg-gray-50 opacity-75'
-      }`}>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                completedRequiredTasks.length === requiredTasks.length 
-                  ? 'bg-blue-100' 
-                  : 'bg-gray-100'
-              }`}>
-                <GraduationCap className={`w-6 h-6 ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-600' 
-                    : 'text-gray-400'
-                }`} />
-              </div>
-              <div>
-                <h3 className={`text-lg font-semibold ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-800' 
-                    : 'text-gray-500'
-                }`}>
-                  Level 2: Master the System
-                </h3>
-                <p className={`text-sm ${
-                  completedRequiredTasks.length === requiredTasks.length 
-                    ? 'text-blue-700' 
-                    : 'text-gray-400'
-                }`}>
-                  Quick tutorials & videos on everyday tasks
-                </p>
-              </div>
-            </div>
-            {completedRequiredTasks.length === requiredTasks.length ? (
-              <div className="text-green-600">
-                <CheckCircle className="w-6 h-6" />
-              </div>
-            ) : (
-              <div className="text-gray-400 text-sm font-medium">
-                {requiredTasks.length - completedRequiredTasks.length} tasks left
-              </div>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <Clock className="w-3 h-3" />
-              <span>2-5 minutes each</span>
-            </div>
-            <Button 
-              disabled={completedRequiredTasks.length !== requiredTasks.length}
-              className={`${
-                completedRequiredTasks.length === requiredTasks.length 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
-              onClick={() => {
-                if (completedRequiredTasks.length === requiredTasks.length) {
-                  if (onNavigateToTutorials) {
-                    onNavigateToTutorials()
-                  } else {
-                    console.log("Navigate to tutorials")
+      {/* Next Steps */}
+      {completedRequiredTasks.length === requiredTasks.length && (
+        <Card className="mb-8 border-green-200 bg-green-50">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-green-800 mb-2">Excellent Work!</h2>
+              <p className="text-green-700 mb-4">
+                You've completed the core setup. Ready for your 30-day learning journey?
+              </p>
+              <Button 
+                onClick={() => {
+                  if (setShowOnboardingModal) {
+                    setShowOnboardingModal(true)
+                  } else if (onNavigateToThirtyDayJourney) {
+                    onNavigateToThirtyDayJourney()
                   }
-                }
-              }}
-            >
-              <Play className="w-4 h-4 mr-2" />
-              {completedRequiredTasks.length === requiredTasks.length ? 'Access Now' : 'Locked'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Video Placeholder Modal */}
-      <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5 text-blue-600" />
-              Invoice Creation Tutorial
-            </DialogTitle>
-            <DialogDescription>
-              Learn how to create and send professional invoices from completed jobs.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-gray-100 rounded-lg flex items-center justify-center h-48">
-              <div className="text-center">
-                <Play className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                <div className="text-gray-600 font-medium">Video Coming Soon</div>
-                <div className="text-sm text-gray-500">Tutorial: How to Create and Send Invoices</div>
-              </div>
+                }}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                Continue to 30-Day Journey
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
-            <div className="space-y-2">
-              <div className="font-medium text-gray-900">This video will cover:</div>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li>• Converting completed jobs to invoices</li>
-                <li>• Adding pricing and labor costs</li>
-                <li>• Customizing invoice templates</li>
-                <li>• Sending invoices to customers</li>
-                <li>• Tracking payment status</li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex justify-center gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowVideoModal(false)}>
-              Close
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowVideoModal(false)}>
-              Watch Tutorial
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </CardContent>
+        </Card>
+      )}
 
+      {/* Skip Option */}
+      <div className="text-center">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            if (setShowOnboardingModal) {
+              setShowOnboardingModal(true)
+            } else if (onNavigateToThirtyDayJourney) {
+              onNavigateToThirtyDayJourney()
+            }
+          }}
+          className="text-gray-600 hover:text-gray-800"
+        >
+          Skip for now - Take me to 30-day journey
+        </Button>
+      </div>
     </div>
   )
 }

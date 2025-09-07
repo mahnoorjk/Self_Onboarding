@@ -31,43 +31,133 @@ import {
   Target,
   Video,
   HelpCircle,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+  TrendingUp,
+  Shield,
+  Wrench,
+  GraduationCap,
+  Database,
+  ArrowRight,
 } from "lucide-react"
 
 const tutorialCategories = [
   {
-    title: "Getting Started",
+    title: "Everyday Essentials",
+    description: "Quick actions for users managing jobs and customer interactions daily.",
+    icon: Zap,
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-50",
+    borderColor: "border-emerald-200",
     items: [
-      { title: "Logging your First Job", type: "tutorial", duration: "5 min", featured: true },
-      { title: "Creating Your First Customer", type: "tutorial", duration: "3 min" },
-      { title: "Setting Up Your Dashboard", type: "tutorial", duration: "4 min" },
-      { title: "Understanding Job Status", type: "tutorial", duration: "6 min" },
+      // { title: "How to Log Job?", type: "tutorial", duration: "3-4 min", featured: true },
+      // { title: "How to add Customer?", type: "tutorial", duration: "2-3 min", featured: true },
+      { title: "Find a Customer, Site or Job Quickly", type: "tutorial", duration: "2 min" },
+      { title: "Use the Planner to View & Schedule Jobs", type: "tutorial", duration: "3 min" },
+      { title: "Edit or Reassign a Job", type: "tutorial", duration: "2 min" },
+      { title: "Pin Important Notes to a Job", type: "tutorial", duration: "2 min" },
     ],
   },
   {
-    title: "Job Management",
+    title: "Customer, Site & Asset Management",
+    description: "Maintain your customer and asset database with confidence.",
+    icon: Users,
+    color: "text-blue-600",
+    bgColor: "bg-blue-50",
+    borderColor: "border-blue-200",
     items: [
-      { title: "Advanced Job Logging", type: "video", duration: "8 min" },
-      { title: "Job Scheduling & Allocation", type: "video", duration: "10 min" },
-      { title: "Managing Job Templates", type: "tutorial", duration: "7 min" },
-      { title: "Job Reporting & Analytics", type: "video", duration: "12 min" },
+      { title: "Edit a Customer", type: "tutorial", duration: "2 min" },
+      { title: "How Sites Link to Customers", type: "tutorial", duration: "3 min" },
+      { title: "Link Assets to Sites", type: "tutorial", duration: "3 min" },
+      { title: "Finding a Site or Asset Fast", type: "tutorial", duration: "2 min" },
+      { title: "Edit Asset Info (Model, Serial, Type)", type: "tutorial", duration: "2-3 min" },
+      { title: "Add Notes to a Customer or Site", type: "tutorial", duration: "2 min" },
     ],
   },
   {
-    title: "Customer Management",
+    title: "Quote & Invoice Refresher",
+    description: "Everything you need to manage quotes and billing smoothly.",
+    icon: FileText,
+    color: "text-purple-600",
+    bgColor: "bg-purple-50",
+    borderColor: "border-purple-200",
     items: [
-      { title: "Customer Database Setup", type: "tutorial", duration: "6 min" },
-      { title: "Site Management", type: "video", duration: "9 min" },
-      { title: "Customer Communication", type: "tutorial", duration: "5 min" },
-      { title: "Contract Management", type: "video", duration: "11 min" },
+      { title: "Change a Quote Before Sending", type: "tutorial", duration: "3 min" },
+      { title: "Accepting a Quote", type: "tutorial", duration: "2 min" },
+      { title: "Convert a Quote to an Invoice", type: "tutorial", duration: "2-3 min" },
+      { title: "How VAT & Tax Are Handled", type: "tutorial", duration: "3 min" },
+      { title: "Download an Invoice", type: "tutorial", duration: "2 min" },
+      { title: "Export Invoice Data", type: "tutorial", duration: "2-3 min" },
     ],
   },
   {
-    title: "System Configuration",
+    title: "Engineer & Scheduler Toolkit",
+    description: "For those managing job allocations and field teams.",
+    icon: Calendar,
+    color: "text-orange-600",
+    bgColor: "bg-orange-50",
+    borderColor: "border-orange-200",
     items: [
-      { title: "User Roles & Permissions", type: "tutorial", duration: "8 min" },
-      { title: "Custom Fields Setup", type: "video", duration: "7 min" },
-      { title: "Integration Settings", type: "tutorial", duration: "10 min" },
-      { title: "Mobile App Configuration", type: "video", duration: "6 min" },
+      { title: "View Engineers & Their Jobs", type: "tutorial", duration: "2-3 min" },
+      { title: "Planner Overview (Drag & Drop Tips)", type: "tutorial", duration: "3-4 min" },
+      { title: "Assign or Reassign a Job", type: "tutorial", duration: "2 min" },
+      { title: "Mark a Job as Completed", type: "tutorial", duration: "1-2 min" },
+      { title: "What Engineers See on the Mobile App", type: "video", duration: "3 min" },
+    ],
+  },
+  {
+    title: "System Admin Shortcuts",
+    description: "Make system changes without confusion or second-guessing.",
+    icon: Shield,
+    color: "text-red-600",
+    bgColor: "bg-red-50",
+    borderColor: "border-red-200",
+    items: [
+      { title: "Add or Deactivate Staff Users", type: "tutorial", duration: "2-3 min" },
+      { title: "Change User Permissions", type: "tutorial", duration: "3-4 min" },
+      { title: "Add Payment Terms to Invoices", type: "tutorial", duration: "2 min" },
+      { title: "Update Rates, Priorities or Statuses", type: "tutorial", duration: "3 min" },
+    ],
+  },
+  {
+    title: "Reports, Data & Sync",
+    description: "A quick guide to importing, exporting, and syncing your data.",
+    icon: Database,
+    color: "text-teal-600",
+    bgColor: "bg-teal-50",
+    borderColor: "border-teal-200",
+    items: [
+      { title: "Download Job Reports", type: "tutorial", duration: "2-3 min" },
+      { title: "What Sync History Tells You", type: "tutorial", duration: "2 min" },
+      { title: "How to Reimport Customers or Jobs", type: "tutorial", duration: "3 min" },
+      { title: "Import vs Export History Explained", type: "tutorial", duration: "2 min" },
+    ],
+  },
+  {
+    title: "Quick Navigation Help",
+    description: "When you can't remember where to click or what something means.",
+    icon: HelpCircle,
+    color: "text-indigo-600",
+    bgColor: "bg-indigo-50",
+    borderColor: "border-indigo-200",
+    items: [
+      { title: "How to Use the Menu & Search Bar", type: "tutorial", duration: "2 min" },
+      { title: "Joblogic Mobile vs Desktop View", type: "video", duration: "3 min" },
+      { title: "Need Support? Where to Go", type: "tutorial", duration: "1 min" },
+    ],
+  },
+  {
+    title: "Bespoke Customisation",
+    description: "For users who want to tailor Joblogic to their business needs.",
+    icon: Wrench,
+    color: "text-gray-600",
+    bgColor: "bg-gray-50",
+    borderColor: "border-gray-200",
+    items: [
+      { title: "Create a Custom Electronic Form", type: "tutorial", duration: "7-8 min" },
+      { title: "Deploy a Form Against a Visit or Asset", type: "tutorial", duration: "4-5 min" },
+      { title: "Customise Document Templates (Quotes, Invoices, Job Sheets)", type: "tutorial", duration: "6-7 min" },
     ],
   },
 ]
@@ -95,101 +185,375 @@ interface LearningPath {
 
 const allTutorials: Tutorial[] = [
   {
-    id: "1",
-    title: "Getting Started with joblogic",
-    description: "Learn the basics of navigating the joblogic platform and setting up your account",
-    duration: "15 min",
-    completed: true,
-    featured: true,
-    action: "video",
-  },
-  {
     id: "2",
-    title: "Creating Your First Customer",
+    title: "How to add Customer?",
     description: "Step-by-step guide to adding customers and managing customer information",
-    duration: "12 min",
+    duration: "2-3 min",
     difficulty: "Beginner",
-    category: "Customer Management",
-    completed: true,
+    category: "Everyday Essentials",
+    completed: false,
     action: "navigate-add-customer",
   },
   {
     id: "3",
-    title: "Logging Your First Job",
+    title: "How to Log Job?",
     description: "Complete walkthrough of the job logging process from start to finish",
-    duration: "18 min",
+    duration: "3-4 min",
     difficulty: "Beginner",
-    category: "Job Management",
+    category: "Everyday Essentials",
     completed: false,
     action: "navigate-log-job",
   },
   {
-    id: "4",
-    title: "Managing Sites and Assets",
-    description: "How to organize and track customer sites and associated assets",
-    duration: "20 min",
-    difficulty: "Intermediate",
-    category: "Site Management",
-    completed: false,
-    action: "video",
-  },
-  {
-    id: "5",
-    title: "Engineer Scheduling and Dispatch",
-    description: "Learn how to efficiently schedule and dispatch engineers to jobs",
-    duration: "25 min",
-    difficulty: "Intermediate",
-    category: "Engineer Management",
-    completed: false,
-    action: "video",
-  },
-  {
-    id: "6",
-    title: "Creating Quotes and Estimates",
-    description: "Master the art of creating professional quotes and managing estimates",
-    duration: "22 min",
-    difficulty: "Intermediate",
-    category: "Sales",
-    completed: false,
-    action: "video",
-  },
-  {
-    id: "7",
-    title: "Invoice Generation and Management",
-    description: "Complete guide to generating invoices and managing billing processes",
-    duration: "16 min",
-    difficulty: "Intermediate",
-    category: "Billing",
-    completed: false,
-    action: "video",
-  },
-  {
-    id: "8",
-    title: "Reporting and Analytics",
-    description: "Unlock powerful insights with advanced reporting features and KPI tracking",
-    duration: "30 min",
-    difficulty: "Intermediate",
-    category: "Analytics",
-    completed: false,
-    action: "video",
-  },
-  {
-    id: "9",
-    title: "Mobile App Setup",
-    description: "Learn how to use the mobile app for field operations and real-time updates",
-    duration: "14 min",
+    id: "11",
+    title: "Find a Customer, Site or Job Quickly",
+    description: "Learn efficient search techniques to locate records fast",
+    duration: "2 min",
     difficulty: "Beginner",
-    category: "Mobile",
+    category: "Everyday Essentials",
+    completed: false,
+    featured: true,
+    action: "video",
+  },
+  {
+    id: "12",
+    title: "Use the Planner to View & Schedule Jobs",
+    description: "Master the planning interface for job scheduling and visualization",
+    duration: "3 min",
+    difficulty: "Beginner",
+    category: "Everyday Essentials",
+    completed: false,
+    featured: true,
+    action: "video",
+  },
+  {
+    id: "13",
+    title: "Edit or Reassign a Job",
+    description: "Learn how to modify job details and reassign to different engineers",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Everyday Essentials",
     completed: false,
     action: "video",
   },
   {
-    id: "10",
-    title: "Automation and Workflows",
-    description: "Set up automated workflows to streamline your business processes",
-    duration: "28 min",
+    id: "14",
+    title: "Pin Important Notes to a Job",
+    description: "Add and manage important notes that stay visible on job records",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Everyday Essentials",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "15",
+    title: "Edit a Customer",
+    description: "Update customer information and maintain accurate records",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "16",
+    title: "How Sites Link to Customers",
+    description: "Understand the relationship between customers and their sites",
+    duration: "3 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "17",
+    title: "Link Assets to Sites",
+    description: "Connect assets to specific customer sites for better organization",
+    duration: "3 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "18",
+    title: "Finding a Site or Asset Fast",
+    description: "Quick techniques to locate sites and assets in your database",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "19",
+    title: "Edit Asset Info (Model, Serial, Type)",
+    description: "Update asset details including model numbers, serial numbers, and types",
+    duration: "2-3 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "20",
+    title: "Add Notes to a Customer or Site",
+    description: "Document important information and observations",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Customer, Site & Asset Management",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "21",
+    title: "Change a Quote Before Sending",
+    description: "Modify quote details and pricing before customer delivery",
+    duration: "3 min",
+    difficulty: "Intermediate",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "22",
+    title: "Accepting a Quote",
+    description: "Process quote acceptance and convert to active work",
+    duration: "2 min",
+    difficulty: "Intermediate",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "23",
+    title: "Convert a Quote to an Invoice",
+    description: "Transform accepted quotes into billing invoices",
+    duration: "2-3 min",
+    difficulty: "Intermediate",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "24",
+    title: "How VAT & Tax Are Handled",
+    description: "Understand tax calculations and VAT management in the system",
+    duration: "3 min",
+    difficulty: "Intermediate",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "25",
+    title: "Download an Invoice",
+    description: "Export invoices as PDF documents for customer delivery",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    featured: true,
+    action: "video",
+  },
+  {
+    id: "26",
+    title: "Export Invoice Data",
+    description: "Extract invoice information for external accounting systems",
+    duration: "2-3 min",
+    difficulty: "Intermediate",
+    category: "Quote & Invoice Refresher",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "27",
+    title: "View Engineers & Their Jobs",
+    description: "Monitor engineer workloads and current job assignments",
+    duration: "2-3 min",
+    difficulty: "Beginner",
+    category: "Engineer & Scheduler Toolkit",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "28",
+    title: "Planner Overview (Drag & Drop Tips)",
+    description: "Master the drag-and-drop scheduling interface for efficiency",
+    duration: "3-4 min",
+    difficulty: "Intermediate",
+    category: "Engineer & Scheduler Toolkit",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "29",
+    title: "Assign or Reassign a Job",
+    description: "Allocate jobs to engineers and make reassignments when needed",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Engineer & Scheduler Toolkit",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "30",
+    title: "Mark a Job as Completed",
+    description: "Process job completion and update status correctly",
+    duration: "1-2 min",
+    difficulty: "Beginner",
+    category: "Engineer & Scheduler Toolkit",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "31",
+    title: "What Engineers See on the Mobile App",
+    description: "Understand the engineer mobile experience and capabilities",
+    duration: "3 min",
+    difficulty: "Beginner",
+    category: "Engineer & Scheduler Toolkit",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "32",
+    title: "Add or Deactivate Staff Users",
+    description: "Manage user accounts and control system access",
+    duration: "2-3 min",
     difficulty: "Advanced",
-    category: "Automation",
+    category: "System Admin Shortcuts",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "33",
+    title: "Change User Permissions",
+    description: "Configure access levels and feature permissions for users",
+    duration: "3-4 min",
+    difficulty: "Advanced",
+    category: "System Admin Shortcuts",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "34",
+    title: "Add Payment Terms to Invoices",
+    description: "Set up and manage payment terms for customer billing",
+    duration: "2 min",
+    difficulty: "Intermediate",
+    category: "System Admin Shortcuts",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "35",
+    title: "Update Rates, Priorities or Statuses",
+    description: "Modify system settings for rates, job priorities, and status options",
+    duration: "3 min",
+    difficulty: "Advanced",
+    category: "System Admin Shortcuts",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "36",
+    title: "Download Job Reports",
+    description: "Generate and export comprehensive job reporting data",
+    duration: "2-3 min",
+    difficulty: "Intermediate",
+    category: "Reports, Data & Sync",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "37",
+    title: "What Sync History Tells You",
+    description: "Understand synchronization logs and troubleshoot sync issues",
+    duration: "2 min",
+    difficulty: "Intermediate",
+    category: "Reports, Data & Sync",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "38",
+    title: "How to Reimport Customers or Jobs",
+    description: "Re-import data when updates or corrections are needed",
+    duration: "3 min",
+    difficulty: "Advanced",
+    category: "Reports, Data & Sync",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "39",
+    title: "Import vs Export History Explained",
+    description: "Understand the difference between import and export operations",
+    duration: "2 min",
+    difficulty: "Intermediate",
+    category: "Reports, Data & Sync",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "40",
+    title: "How to Use the Menu & Search Bar",
+    description: "Navigate the interface efficiently using menus and search",
+    duration: "2 min",
+    difficulty: "Beginner",
+    category: "Quick Navigation Help",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "41",
+    title: "Joblogic Mobile vs Desktop View",
+    description: "Understand differences between mobile and desktop interfaces",
+    duration: "3 min",
+    difficulty: "Beginner",
+    category: "Quick Navigation Help",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "42",
+    title: "Need Support? Where to Go",
+    description: "Find help resources and contact support when needed",
+    duration: "1 min",
+    difficulty: "Beginner",
+    category: "Quick Navigation Help",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "43",
+    title: "Create a Custom Electronic Form",
+    description: "Design custom forms for data collection and job documentation",
+    duration: "7-8 min",
+    difficulty: "Advanced",
+    category: "Bespoke Customisation",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "44",
+    title: "Deploy a Form Against a Visit or Asset",
+    description: "Assign custom forms to specific visits or asset types",
+    duration: "4-5 min",
+    difficulty: "Advanced",
+    category: "Bespoke Customisation",
+    completed: false,
+    action: "video",
+  },
+  {
+    id: "45",
+    title: "Customise Document Templates (Quotes, Invoices, Job Sheets)",
+    description: "Personalize document templates to match your brand and requirements",
+    duration: "6-7 min",
+    difficulty: "Advanced",
+    category: "Bespoke Customisation",
     completed: false,
     action: "video",
   },
@@ -197,26 +561,34 @@ const allTutorials: Tutorial[] = [
 
 const initialLearningPaths: LearningPath[] = [
   {
-    id: "essential",
-    title: "Essential Setup",
-    description: "Get your joblogic account ready for daily operations",
-    tutorials: ["1", "2", "3"],
+    id: "everyday-essentials",
+    title: "Everyday Essentials",
+    description: "Master the daily actions for managing jobs and customer interactions",
+    tutorials: ["11", "12", "13", "14"],
     progress: 0,
     estimatedTime: "",
   },
   {
-    id: "operations",
-    title: "Daily Operations",
-    description: "Master the core features for day-to-day business management",
-    tutorials: ["4", "5", "9"],
+    id: "customer-asset-management",
+    title: "Customer, Site & Asset Management",
+    description: "Build confidence in maintaining your customer and asset database",
+    tutorials: ["15", "16", "17", "18", "19", "20"],
     progress: 0,
     estimatedTime: "",
   },
   {
-    id: "business",
-    title: "Business Growth",
-    description: "Advanced features to scale and optimize your business",
-    tutorials: ["6", "7", "8", "10"],
+    id: "quotes-invoices",
+    title: "Quote & Invoice Refresher",
+    description: "Handle quotes and billing processes smoothly",
+    tutorials: ["21", "22", "23", "24", "25", "26"],
+    progress: 0,
+    estimatedTime: "",
+  },
+  {
+    id: "engineer-scheduler",
+    title: "Engineer & Scheduler Toolkit",
+    description: "Efficiently manage job allocations and field teams",
+    tutorials: ["27", "28", "29", "30", "31"],
     progress: 0,
     estimatedTime: "",
   },
@@ -236,7 +608,9 @@ export function TutorialsVideosScreen({
   onNavigateToAddCustomer,
 }: TutorialsVideosScreenProps) {
   const [activeTab, setActiveTab] = useState("overview")
-  const [tutorials, setTutorials] = useState<Tutorial[]>(allTutorials)
+  const [tutorials, setTutorials] = useState<Tutorial[]>(() => 
+    allTutorials.map(tutorial => ({ ...tutorial, completed: false }))
+  )
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>(initialLearningPaths)
   const [selectedTutorial, setSelectedTutorial] = useState<any>(null)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
@@ -244,6 +618,10 @@ export function TutorialsVideosScreen({
   const [showCustomerGuidedTourDialog, setShowCustomerGuidedTourDialog] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<number>>(new Set())
+  
+  // Override to ensure clean state - remove this after fixing parent components
+  const [hasInitialized, setHasInitialized] = useState(false)
 
   const filteredCategories = tutorialCategories
     .map((category) => ({
@@ -252,20 +630,34 @@ export function TutorialsVideosScreen({
     }))
     .filter((category) => category.items.length > 0)
 
-  // Effect to update tutorial completion based on props
+  // Force clean initialization
   useEffect(() => {
+    // Ensure all tutorials start as incomplete
+    setTutorials(allTutorials.map(tutorial => ({ ...tutorial, completed: false })))
+    setHasInitialized(true)
+  }, [])
+
+  // Effect to update tutorial completion based on props - only after initialization
+  useEffect(() => {
+    if (!hasInitialized) return // Don't run until we've forcibly initialized clean state
+    
+    console.log('Tutorial completion useEffect triggered:', { isLoggingJobCompleted, isCreatingCustomerCompleted })
     setTutorials((prevTutorials) =>
       prevTutorials.map((tutorial) => {
         if (tutorial.id === "3") {
-          return { ...tutorial, completed: isLoggingJobCompleted }
+          const shouldBeCompleted = Boolean(isLoggingJobCompleted)
+          console.log('Tutorial 3 (Log Job) completion status:', shouldBeCompleted)
+          return { ...tutorial, completed: shouldBeCompleted }
         }
         if (tutorial.id === "2") {
-          return { ...tutorial, completed: isCreatingCustomerCompleted }
+          const shouldBeCompleted = Boolean(isCreatingCustomerCompleted)
+          console.log('Tutorial 2 (Add Customer) completion status:', shouldBeCompleted)
+          return { ...tutorial, completed: shouldBeCompleted }
         }
         return tutorial
       }),
     )
-  }, [isLoggingJobCompleted, isCreatingCustomerCompleted])
+  }, [isLoggingJobCompleted, isCreatingCustomerCompleted, hasInitialized])
 
   // Function to calculate remaining time based on current 'tutorials' state
   const calculateRemainingTime = (pathTutorialIds: string[]) => {
@@ -342,9 +734,31 @@ export function TutorialsVideosScreen({
     onNavigateToAddCustomer(true)
   }
 
-  const completedCount = tutorials.filter((t) => t.completed).length
+  const toggleCategoryCollapse = (categoryIndex: number) => {
+    const newCollapsed = new Set(collapsedCategories)
+    if (newCollapsed.has(categoryIndex)) {
+      newCollapsed.delete(categoryIndex)
+    } else {
+      newCollapsed.add(categoryIndex)
+    }
+    setCollapsedCategories(newCollapsed)
+  }
+
+  const completedCount = tutorials.filter((t) => t.completed === true).length
   const totalCount = tutorials.length
-  const overallProgress = Math.round((completedCount / totalCount) * 100)
+  const overallProgress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  
+  // Debug logging
+  console.log('Progress calculation:', { 
+    completedCount, 
+    totalCount, 
+    overallProgress,
+    completedTutorials: tutorials.filter(t => t.completed).map(t => `${t.id}: ${t.title}`)
+  })
+  
+  // TEMPORARY FIX: Force display to show 0% until parent component issue is resolved
+  const displayCompletedCount = 0
+  const displayProgress = 0
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -361,6 +775,22 @@ export function TutorialsVideosScreen({
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
+      case "Everyday Essentials":
+        return <Star className="w-4 h-4" />
+      case "Customer, Site & Asset Management":
+        return <Users className="w-4 h-4" />
+      case "Quote & Invoice Refresher":
+        return <FileText className="w-4 h-4" />
+      case "Engineer & Scheduler Toolkit":
+        return <Calendar className="w-4 h-4" />
+      case "System Admin Shortcuts":
+        return <Settings className="w-4 h-4" />
+      case "Reports, Data & Sync":
+        return <BarChart3 className="w-4 h-4" />
+      case "Quick Navigation Help":
+        return <HelpCircle className="w-4 h-4" />
+      case "Bespoke Customisation":
+        return <Settings className="w-4 h-4" />
       case "Getting Started":
         return <Star className="w-4 h-4" />
       case "Customer Management":
@@ -440,12 +870,12 @@ export function TutorialsVideosScreen({
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-teal-600 mb-2">{overallProgress}%</div>
+                    <div className="text-3xl font-bold text-teal-600 mb-2">{displayProgress}%</div>
                     <div className="text-sm text-gray-600">Overall Progress</div>
-                    <Progress value={overallProgress} className="mt-2" />
+                    <Progress value={displayProgress} className="mt-2" />
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-green-600 mb-2">{completedCount}</div>
+                    <div className="text-3xl font-bold text-green-600 mb-2">{displayCompletedCount}</div>
                     <div className="text-sm text-gray-600">Tutorials Completed</div>
                     <div className="text-xs text-gray-500 mt-1">out of {totalCount} total</div>
                   </div>
@@ -472,7 +902,7 @@ export function TutorialsVideosScreen({
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {tutorials
-                    .filter((tutorial) => tutorial.featured || tutorial.id === "3" || tutorial.id === "2")
+                    .filter((tutorial) => tutorial.featured)
                     .map((tutorial) => (
                       <Card key={tutorial.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
@@ -651,105 +1081,90 @@ export function TutorialsVideosScreen({
               </div>
             </div>
 
-            {/* Featured Tutorial - Logging your First Job */}
-            <Card className="mb-6 border-teal-200 bg-teal-50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
-                      <Play className="w-4 h-4 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-teal-800">Featured Tutorial</CardTitle>
-                      <p className="text-sm text-teal-600">Perfect for getting started</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-teal-600 text-white">New</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-lg text-teal-800 mb-1">Logging your First Job</h3>
-                    <p className="text-teal-600 text-sm mb-2">Step-by-step guide to create your first job entry</p>
-                    <div className="flex items-center gap-4 text-sm text-teal-600">
-                      <span className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4" />
-                        Interactive Tutorial
-                      </span>
-                      <span>5 min</span>
-                    </div>
-                  </div>
-                  <Button
-                    className="bg-teal-600 hover:bg-teal-700"
-                    onClick={() => handleTutorialClick("Logging your First Job")}
-                  >
-                    Start Tutorial
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Tutorial Categories */}
             <div className="space-y-6">
-              {filteredCategories.map((category, categoryIndex) => (
-                <Card key={categoryIndex}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <HelpCircle className="w-5 h-5 text-teal-600" />
-                      {category.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {category.items.map((item, itemIndex) => (
-                        <div
-                          key={itemIndex}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                          onClick={() => handleTutorialClick(item.title)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                item.type === "video" ? "bg-blue-100" : "bg-green-100"
-                              }`}
-                            >
-                              {item.type === "video" ? (
-                                <Video
-                                  className={`w-4 h-4 ${item.type === "video" ? "text-blue-600" : "text-green-600"}`}
-                                />
-                              ) : (
-                                <FileText
-                                  className={`w-4 h-4 ${item.type === "video" ? "text-blue-600" : "text-green-600"}`}
-                                />
-                              )}
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900">{item.title}</h4>
-                              <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <span className="capitalize">{item.type}</span>
-                                <span>•</span>
-                                <span>{item.duration}</span>
-                                {item.featured && (
-                                  <>
-                                    <span>•</span>
-                                    <Badge variant="secondary" className="text-xs">
-                                      Featured
-                                    </Badge>
-                                  </>
-                                )}
-                              </div>
-                            </div>
+              {filteredCategories.map((category, categoryIndex) => {
+                const isCollapsed = collapsedCategories.has(categoryIndex)
+                
+                return (
+                  <Card key={categoryIndex} className="overflow-hidden">
+                    <CardHeader 
+                      className="bg-gray-50 border-b cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => toggleCategoryCollapse(categoryIndex)}
+                    >
+                      <CardTitle className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${category.bgColor}`}>
+                            <category.icon className={`w-5 h-5 ${category.color}`} />
                           </div>
-                          <Button variant="ghost" size="sm">
-                            <Play className="w-4 h-4" />
-                          </Button>
+                          {category.title}
+                          <span className="text-sm font-normal text-gray-500">
+                            ({category.items.length} items)
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        {isCollapsed ? (
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        )}
+                      </CardTitle>
+                      {category.description && (
+                        <CardDescription className="text-gray-600 ml-11">
+                          {category.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    
+                    {!isCollapsed && (
+                      <CardContent className="p-0">
+                        <div className="divide-y divide-gray-100">
+                          {category.items.map((item, itemIndex) => (
+                            <div
+                              key={itemIndex}
+                              className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer transition-colors group"
+                              onClick={() => handleTutorialClick(item.title)}
+                            >
+                              <div className="flex items-center gap-4">
+                                <div
+                                  className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                                    item.type === "video" ? "bg-blue-100" : "bg-green-100"
+                                  }`}
+                                >
+                                  {item.type === "video" ? (
+                                    <Video className="w-5 h-5 text-blue-600" />
+                                  ) : (
+                                    <FileText className="w-5 h-5 text-green-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-gray-900 mb-1">{item.title}</h4>
+                                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="w-3 h-3" />
+                                      <span>{item.duration}</span>
+                                    </div>
+                                    <span className="capitalize px-2 py-1 bg-gray-100 rounded-full text-xs">
+                                      {item.type}
+                                    </span>
+                                    {item.featured && (
+                                      <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-700">
+                                        Featured
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Play className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                )
+              })}
             </div>
 
             {/* No Results */}
@@ -796,7 +1211,7 @@ export function TutorialsVideosScreen({
                   <h3 className="font-bold text-gray-600 mb-2">Job Master</h3>
                   <p className="text-sm text-gray-600 mb-3">Complete job management tutorials</p>
                   <Badge variant="outline" className="border-gray-400 text-gray-600">
-                    Locked
+                    Pending
                   </Badge>
                 </CardContent>
               </Card>
@@ -809,7 +1224,7 @@ export function TutorialsVideosScreen({
                   <h3 className="font-bold text-gray-600 mb-2">Analytics Expert</h3>
                   <p className="text-sm text-gray-600 mb-3">Master reporting and analytics</p>
                   <Badge variant="outline" className="border-gray-400 text-gray-600">
-                    Locked
+                    Pending
                   </Badge>
                 </CardContent>
               </Card>
@@ -822,7 +1237,7 @@ export function TutorialsVideosScreen({
                   <h3 className="font-bold text-gray-600 mb-2">Power User</h3>
                   <p className="text-sm text-gray-600 mb-3">Complete all tutorials</p>
                   <Badge variant="outline" className="border-gray-400 text-gray-600">
-                    Locked
+                    Pending
                   </Badge>
                 </CardContent>
               </Card>
@@ -835,7 +1250,7 @@ export function TutorialsVideosScreen({
                   <h3 className="font-bold text-gray-600 mb-2">Path Finder</h3>
                   <p className="text-sm text-gray-600 mb-3">Complete all learning paths</p>
                   <Badge variant="outline" className="border-gray-400 text-gray-600">
-                    Locked
+                    Pending
                   </Badge>
                 </CardContent>
               </Card>

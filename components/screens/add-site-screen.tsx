@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -16,11 +16,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Plus, Info, X, ArrowRight, ArrowLeft, CheckCircle, Target, Lightbulb, HelpCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
-interface AddCustomerScreenProps {
-  onCustomerSaveSuccess: () => void
+interface AddSiteScreenProps {
+  onSiteSaveSuccess?: () => void
   onNavigateBackToTutorials?: () => void
-  onNavigateToSiteScreen?: () => void
   showGuide?: boolean
 }
 
@@ -38,62 +38,64 @@ interface GuideStep {
 const guideSteps: GuideStep[] = [
   {
     id: "welcome",
-    title: "Welcome to Customer Creation!",
+    title: "Welcome to Site Creation!",
     description:
-      "Let's walk through creating your first customer step by step. This tutorial will guide you through all the essential fields.",
+      "Let's walk through creating your first site step by step. This tutorial will guide you through all the essential fields.",
     target: "page-header",
     position: "bottom",
   },
   {
-    id: "customer-name",
-    title: "Step 1: Enter Customer Name",
+    id: "customer-select",
+    title: "Step 1: Select Customer",
     description:
-      "Start by entering the customer's name. This is a required field and will be the primary identifier for this customer. Please enter a customer name to continue.",
-    target: "customer-name-input",
+      "Start by selecting the customer for this site. This is a required field and links the site to a customer. Please select a customer to continue.",
+    target: "customer-select",
     position: "bottom",
     action: "highlight",
     requiresInput: true,
-    inputField: "customerName",
+    inputField: "customer",
+  },
+  {
+    id: "site-name",
+    title: "Step 2: Enter Site Name",
+    description:
+      "Enter a descriptive name for this site. This is a required field and will help identify the site. Please enter a site name to continue.",
+    target: "site-name-input",
+    position: "bottom",
+    action: "highlight",
+    requiresInput: true,
+    inputField: "siteName",
   },
   {
     id: "address-section",
-    title: "Step 2: Add Customer Address",
+    title: "Step 3: Add Site Address",
     description:
-      "Fill in the customer's address details. Start with the street address in the text area below.",
+      "Fill in the site's address details. This helps with location identification.",
     target: "address-textarea",
     position: "bottom",
     action: "highlight",
   },
   {
     id: "city-field",
-    title: "Step 3: Enter City",
-    description: "Add the city where your customer is located.",
+    title: "Step 4: Enter City",
+    description: "Add the city where the site is located.",
     target: "city-input",
     position: "bottom",
     action: "highlight",
   },
   {
     id: "postcode-field",
-    title: "Step 4: Add Postcode",
+    title: "Step 5: Add Postcode",
     description: "Enter the postcode for accurate location identification.",
     target: "postcode-input",
     position: "bottom",
     action: "highlight",
   },
   {
-    id: "customer-type",
-    title: "Step 5: Select Customer Type",
+    id: "contact-first-name",
+    title: "Step 6: Add Contact First Name",
     description:
-      "Select the type of customer (e.g. residential, commercial, or other). This helps with categorising your customer base.",
-    target: "customer-type-select",
-    position: "bottom",
-    action: "highlight",
-  },
-  {
-    id: "main-contact-name",
-    title: "Step 6: Add Main Contact First Name",
-    description:
-      "Enter the first name of the main contact person for this customer.",
+      "Enter the first name of the main contact person for this site.",
     target: "contact-first-name",
     position: "bottom",
     action: "highlight",
@@ -116,33 +118,21 @@ const guideSteps: GuideStep[] = [
     action: "highlight",
   },
   {
-    id: "auto-generate-site",
-    title: "Step 9: Auto Generate Site",
+    id: "save-site",
+    title: "Step 9: Save Your Site",
     description:
-      "The default setting will automatically create a site for the customer with the same details. If you uncheck this checkbox, you will manually have to create a site and add it to the customer later.",
-    target: "auto-generate-site",
-    position: "top",
-    action: "highlight",
-  },
-  {
-    id: "save-customer",
-    title: "Step 10: Save Your Customer",
-    description:
-      "Great! You've filled in all the essential information. Now click the Save button to create your first customer. Congratulations on creating your first customer!",
+      "Great! You've filled in all the essential information. Now click the Save button to create your first site. Congratulations on creating your first site!",
     target: "save-button",
     position: "top",
     action: "highlight",
   },
 ]
 
-export function AddCustomerScreen({
-  onCustomerSaveSuccess,
-  onNavigateBackToTutorials,
-  onNavigateToSiteScreen,
-  showGuide = false,
-}: AddCustomerScreenProps) {
-  const [showCongratulations, setShowCongratulations] = useState(false)
-
+export function AddSiteScreen({ 
+  onSiteSaveSuccess, 
+  onNavigateBackToTutorials, 
+  showGuide = false 
+}: AddSiteScreenProps) {
   // Guide state
   const [isGuideActive, setIsGuideActive] = useState(false)
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
@@ -150,31 +140,38 @@ export function AddCustomerScreen({
   const [showStartGuideButton, setShowStartGuideButton] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
 
-  // Form state for validation
-  const [formData, setFormData] = useState({
-    customerName: "",
-    address: "",
-    city: "",
-    postcode: "",
-    customerType: "",
-    contactFirstName: "",
-    contactLastName: "",
-    contactEmail: "",
-    autoGenerateSite: true,
-  })
+  // Form state
+  const [customer, setCustomer] = useState("")
+  const [siteName, setSiteName] = useState("")
+  const [tags, setTags] = useState<string[]>([])
+  const [address, setAddress] = useState("")
+  const [area, setArea] = useState("")
+  const [city, setCity] = useState("")
+  const [countyStateRegion, setCountyStateRegion] = useState("")
+  const [accountManager, setAccountManager] = useState("")
+  const [postcode, setPostcode] = useState("")
+  const [telephone, setTelephone] = useState("")
+  const [telephoneArea, setTelephoneArea] = useState("")
+  const [siteReferenceNumber, setSiteReferenceNumber] = useState("")
+  
+  // Main Contact Person fields
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [contactTelephone, setContactTelephone] = useState("")
+  const [email, setEmail] = useState("")
+  const [jobPosition, setJobPosition] = useState("")
 
   // Refs for guide targeting
   const mainContainerRef = useRef<HTMLDivElement>(null)
   const pageHeaderRef = useRef<HTMLDivElement>(null)
-  const customerNameInputRef = useRef<HTMLDivElement>(null)
+  const customerSelectRef = useRef<HTMLDivElement>(null)
+  const siteNameInputRef = useRef<HTMLDivElement>(null)
   const addressTextareaRef = useRef<HTMLDivElement>(null)
   const cityInputRef = useRef<HTMLDivElement>(null)
   const postcodeInputRef = useRef<HTMLDivElement>(null)
-  const customerTypeSelectRef = useRef<HTMLDivElement>(null)
   const contactFirstNameRef = useRef<HTMLDivElement>(null)
   const contactLastNameRef = useRef<HTMLDivElement>(null)
   const contactEmailRef = useRef<HTMLDivElement>(null)
-  const autoGenerateSiteRef = useRef<HTMLDivElement>(null)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   // Initialize guide when showGuide prop is true (auto-start from tutorials)
@@ -346,24 +343,22 @@ export function AddCustomerScreen({
     switch (target) {
       case "page-header":
         return pageHeaderRef.current
-      case "customer-name-input":
-        return customerNameInputRef.current
+      case "customer-select":
+        return customerSelectRef.current
+      case "site-name-input":
+        return siteNameInputRef.current
       case "address-textarea":
         return addressTextareaRef.current
       case "city-input":
         return cityInputRef.current
       case "postcode-input":
         return postcodeInputRef.current
-      case "customer-type-select":
-        return customerTypeSelectRef.current
       case "contact-first-name":
         return contactFirstNameRef.current
       case "contact-last-name":
         return contactLastNameRef.current
       case "contact-email":
         return contactEmailRef.current
-      case "auto-generate-site":
-        return autoGenerateSiteRef.current
       case "save-button":
         return saveButtonRef.current
       default:
@@ -375,22 +370,10 @@ export function AddCustomerScreen({
     if (!step.requiresInput) return true
 
     switch (step.inputField) {
-      case "customerName":
-        return formData.customerName.trim() !== ""
-      case "address":
-        return formData.address.trim() !== ""
-      case "city":
-        return formData.city.trim() !== ""
-      case "postcode":
-        return formData.postcode.trim() !== ""
-      case "customerType":
-        return formData.customerType !== ""
-      case "contactFirstName":
-        return formData.contactFirstName.trim() !== ""
-      case "contactLastName":
-        return formData.contactLastName.trim() !== ""
-      case "contactEmail":
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contactEmail)
+      case "customer":
+        return customer.trim() !== ""
+      case "siteName":
+        return siteName.trim() !== ""
       default:
         return true
     }
@@ -438,48 +421,51 @@ export function AddCustomerScreen({
     setShowStartGuideButton(true) // Show the manual start button on the page if skipped
   }
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
   const handleSave = () => {
-    // Simulate saving customer
-    console.log("Customer saved!", formData)
+    // Save site logic here
+    console.log("Site saved!", {
+      customer,
+      siteName,
+      address,
+      city,
+      postcode,
+      firstName,
+      lastName,
+      email
+    })
     
     // If guide is active, complete it
     if (isGuideActive) {
       setIsGuideActive(false)
     }
-
-    // Check auto generate site checkbox to determine navigation
-    if (formData.autoGenerateSite) {
-      // Auto generate site is checked - follow normal flow
-      onCustomerSaveSuccess()
-      setShowCongratulations(true)
-    } else {
-      // Auto generate site is unchecked - navigate to add site screen with tutorial
-      if (onNavigateToSiteScreen) {
-        onNavigateToSiteScreen()
-      } else {
-        // Fallback to normal flow if callback not provided
-        onCustomerSaveSuccess()
-        setShowCongratulations(true)
-      }
+    
+    // Call the appropriate save success callback
+    if (onSiteSaveSuccess) {
+      onSiteSaveSuccess()
     }
   }
 
-  const handleContinueToLearningPath = () => {
-    setShowCongratulations(false)
-    if (onNavigateBackToTutorials) {
+  const handleCancel = () => {
+    if (showGuide && onNavigateBackToTutorials) {
       onNavigateBackToTutorials()
     }
+  }
+
+  const addTag = (tag: string) => {
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag])
+    }
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
   const currentStep = guideSteps[currentGuideStep]
 
   return (
-    <div ref={mainContainerRef} className="h-full bg-white overflow-auto relative">
-      {/* Guide Overlay - Updated for better scrollability */}
+    <div ref={mainContainerRef} className="p-6 max-w-6xl mx-auto relative">
+      {/* Guide Overlay */}
       {isGuideActive && currentStep?.action === "highlight" && (
         <>
           {/* Dark overlay covering entire viewport with cutout */}
@@ -518,277 +504,346 @@ export function AddCustomerScreen({
         </>
       )}
 
-      <div className="p-6 bg-gray-50 min-h-full">
-        <div className="mb-6" ref={pageHeaderRef}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-800">Add Customer</h1>
-              {isGuideActive && (
-                <div className="flex items-center gap-2 text-sm text-teal-600 bg-teal-50 px-4 py-2 rounded-lg border border-teal-200 shadow-sm mt-2">
-                  <Target className="w-4 h-4" />
-                  <span className="font-medium">Tutorial Mode Active</span>
-                  <span className="text-teal-500">•</span>
-                  <span>
-                    Step {currentGuideStep + 1} of {guideSteps.length}
-                  </span>
-                </div>
-              )}
+      <div className="mb-6" ref={pageHeaderRef}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Add Site</h1>
+            <div className="text-sm text-gray-600">
+              Create a new site for your customers and manage their location details.
             </div>
-            {showStartGuideButton && !isGuideActive && (
-              <Button
-                onClick={startGuide}
-                className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2 shadow-lg"
-              >
-                <Lightbulb className="w-4 h-4" />
-                Start Tutorial
-              </Button>
+            {isGuideActive && (
+              <div className="flex items-center gap-2 text-sm text-teal-600 bg-teal-50 px-4 py-2 rounded-lg border border-teal-200 shadow-sm mt-2">
+                <Target className="w-4 h-4" />
+                <span className="font-medium">Tutorial Mode Active</span>
+                <span className="text-teal-500">•</span>
+                <span>
+                  Step {currentGuideStep + 1} of {guideSteps.length}
+                </span>
+              </div>
             )}
           </div>
+          {showStartGuideButton && !isGuideActive && (
+            <Button
+              onClick={startGuide}
+              className="bg-teal-600 hover:bg-teal-700 flex items-center gap-2 shadow-lg"
+            >
+              <Lightbulb className="w-4 h-4" />
+              Start Tutorial
+            </Button>
+          )}
         </div>
+      </div>
 
-        {/* Address Lookup Section */}
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="mb-2">
-            <Label className="text-sm font-medium text-gray-700">Find Address to Populate All Fields</Label>
-          </div>
-          <Input placeholder="Start Typing Company Name, Address, Postcode..." className="w-full" />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            {/* Tags */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Tag(s)</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Please select option(s)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tag1">Tag 1</SelectItem>
-                  <SelectItem value="tag2">Tag 2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Customer Name */}
-            <div ref={customerNameInputRef}>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Customer Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                value={formData.customerName}
-                onChange={(e) => handleInputChange("customerName", e.target.value)}
-              />
-            </div>
-
-            {/* Address Section */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Address</Label>
-              <div className="space-y-3">
-                <div ref={addressTextareaRef}>
-                  <Textarea
-                    placeholder="Company name, building, Street address"
-                    rows={3}
-                    className="resize-none"
-                    value={formData.address}
-                    onChange={(e) => handleInputChange("address", e.target.value)}
-                  />
-                </div>
-                <Input placeholder="Area" />
-                <div ref={cityInputRef}>
-                  <Input
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={(e) => handleInputChange("city", e.target.value)}
-                  />
-                </div>
-                <Input placeholder="County, State/Province/Region" />
-              </div>
-            </div>
-
-            {/* Postcode and Telephone */}
-            <div className="grid grid-cols-2 gap-4">
-              <div ref={postcodeInputRef}>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Postcode</Label>
-                <Input value={formData.postcode} onChange={(e) => handleInputChange("postcode", e.target.value)} />
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Telephone</Label>
-                <div className="flex">
-                  <Select>
-                    <SelectTrigger className="w-20">
-                      <SelectValue placeholder="🇬🇧" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Site Form */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardContent className="p-6">
+              {/* Customer Selection */}
+              <div className="mb-6" ref={customerSelectRef}>
+                <Label htmlFor="customer" className="text-sm font-medium">
+                  Customer <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative mt-2">
+                  <Select value={customer} onValueChange={setCustomer}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Please select an option..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="uk">🇬🇧</SelectItem>
-                      <SelectItem value="us">🇺🇸</SelectItem>
+                      <SelectItem value="customer1">Customer 1</SelectItem>
+                      <SelectItem value="customer2">Customer 2</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input className="flex-1 ml-1" />
+                  <Button 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 bg-green-500 hover:bg-green-600"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
                 </div>
               </div>
-            </div>
 
-            {/* Customer Type */}
-            <div ref={customerTypeSelectRef}>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Customer Type</Label>
-              <div className="flex">
-                <Select
-                  value={formData.customerType}
-                  onValueChange={(value) => handleInputChange("customerType", value)}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Please select an option..." />
+              {/* Find Address Section */}
+              <div className="mb-6">
+                <Label className="text-sm font-medium text-gray-700">
+                  Find Address to Populate All Fields
+                </Label>
+                <Input
+                  placeholder="Start Typing Company Name, Address, Postcode..."
+                  className="mt-2 bg-gray-50"
+                />
+              </div>
+
+              {/* Site Name */}
+              <div className="mb-6" ref={siteNameInputRef}>
+                <Label htmlFor="siteName" className="text-sm font-medium">
+                  Site Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="siteName"
+                  value={siteName}
+                  onChange={(e) => setSiteName(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* Tags */}
+              <div className="mb-6">
+                <Label className="text-sm font-medium">Tag(s)</Label>
+                <Select onValueChange={addTag}>
+                  <SelectTrigger className="w-full mt-2">
+                    <SelectValue placeholder="Please select option(s)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="residential">Residential</SelectItem>
                     <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="residential">Residential</SelectItem>
+                    <SelectItem value="industrial">Industrial</SelectItem>
+                    <SelectItem value="retail">Retail</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" className="ml-2 bg-green-600 hover:bg-green-700">
-                  <Plus className="w-4 h-4" />
-                </Button>
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tags.map((tag, index) => (
+                      <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                        {tag}
+                        <button 
+                          onClick={() => removeTag(tag)}
+                          className="ml-1 text-xs hover:text-red-500"
+                        >
+                          ×
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
 
-            {/* Reference Number and Account Number */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Reference Number</Label>
-                <Input />
+              {/* Address */}
+              <div className="mb-6" ref={addressTextareaRef}>
+                <Label htmlFor="address" className="text-sm font-medium">Address</Label>
+                <Textarea
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Company name, building, Street address"
+                  className="mt-2 min-h-[80px]"
+                />
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Account Number</Label>
-                <Input />
-              </div>
-            </div>
 
-            {/* Selling Rate */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Selling Rate</Label>
-              <div className="flex">
-                <Select>
-                  <SelectTrigger className="flex-1">
+              {/* Area, City, County Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                  <Label htmlFor="area" className="text-sm font-medium">Area</Label>
+                  <Input
+                    id="area"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div ref={cityInputRef}>
+                  <Label htmlFor="city" className="text-sm font-medium">City</Label>
+                  <Input
+                    id="city"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="county" className="text-sm font-medium">County, State/Province/Region</Label>
+                  <Input
+                    id="county"
+                    value={countyStateRegion}
+                    onChange={(e) => setCountyStateRegion(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+
+              {/* Account Manager */}
+              <div className="mb-6">
+                <Label htmlFor="accountManager" className="text-sm font-medium flex items-center gap-2">
+                  Account Manager
+                  <Info className="w-4 h-4 text-gray-400" />
+                </Label>
+                <Select value={accountManager} onValueChange={setAccountManager}>
+                  <SelectTrigger className="w-full mt-2">
                     <SelectValue placeholder="Please select an option..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="standard">Standard Rate</SelectItem>
-                    <SelectItem value="premium">Premium Rate</SelectItem>
+                    <SelectItem value="manager1">Manager 1</SelectItem>
+                    <SelectItem value="manager2">Manager 2</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" className="ml-2 bg-green-600 hover:bg-green-700">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Account Manager */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">Account Manager</Label>
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Please select an option..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manager1">Manager 1</SelectItem>
-                  <SelectItem value="manager2">Manager 2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Right Column - Main Contact */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 h-fit">
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">Main Contact</h2>
-
-            <div className="space-y-4">
-              {/* First Name */}
-              <div ref={contactFirstNameRef}>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">First Name</Label>
-                <Input
-                  value={formData.contactFirstName}
-                  onChange={(e) => handleInputChange("contactFirstName", e.target.value)}
-                />
               </div>
 
-              {/* Last Name */}
-              <div ref={contactLastNameRef}>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Last Name</Label>
-                <Input
-                  value={formData.contactLastName}
-                  onChange={(e) => handleInputChange("contactLastName", e.target.value)}
-                />
-              </div>
-
-              {/* Telephone and Email */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Postcode and Telephone */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div ref={postcodeInputRef}>
+                  <Label htmlFor="postcode" className="text-sm font-medium">Postcode</Label>
+                  <Input
+                    id="postcode"
+                    value={postcode}
+                    onChange={(e) => setPostcode(e.target.value)}
+                    className="mt-2"
+                  />
+                </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Telephone</Label>
-                  <div className="flex">
-                    <Select>
+                  <Label htmlFor="telephone" className="text-sm font-medium">Telephone</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Select value={telephoneArea} onValueChange={setTelephoneArea}>
                       <SelectTrigger className="w-20">
                         <SelectValue placeholder="🇬🇧" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="uk">🇬🇧</SelectItem>
+                        <SelectItem value="gb">🇬🇧 +44</SelectItem>
+                        <SelectItem value="us">🇺🇸 +1</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="telephone"
+                      value={telephone}
+                      onChange={(e) => setTelephone(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Area Dropdown */}
+              <div className="mb-6">
+                <Label htmlFor="areaSelect" className="text-sm font-medium">Area</Label>
+                <div className="relative mt-2">
+                  <Select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Please select an option..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="area1">Area 1</SelectItem>
+                      <SelectItem value="area2">Area 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    size="sm" 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 bg-green-500 hover:bg-green-600"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Site Reference Number */}
+              <div className="mb-6">
+                <Label htmlFor="siteRef" className="text-sm font-medium flex items-center gap-2">
+                  Site Reference Number
+                  <Info className="w-4 h-4 text-gray-400" />
+                </Label>
+                <Input
+                  id="siteRef"
+                  value={siteReferenceNumber}
+                  onChange={(e) => setSiteReferenceNumber(e.target.value)}
+                  className="mt-2"
+                />
+              </div>
+
+              {/* Required Fields Notice */}
+              <div className="mb-6 text-sm text-gray-600">
+                <span className="text-red-500">*</span> Required Fields
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={handleCancel}>
+                  Cancel
+                </Button>
+                <Button ref={saveButtonRef} onClick={handleSave} className="bg-green-500 hover:bg-green-600">
+                  Save
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Sidebar - Main Contact Person */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Main Contact Person</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div ref={contactFirstNameRef}>
+                <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div ref={contactLastNameRef}>
+                <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="mt-1"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="contactTelephone" className="text-sm font-medium">Telephone</Label>
+                  <div className="flex gap-1 mt-1">
+                    <Select>
+                      <SelectTrigger className="w-12 p-1">
+                        <SelectValue placeholder="🇬🇧" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gb">🇬🇧</SelectItem>
                         <SelectItem value="us">🇺🇸</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input className="flex-1 ml-1" />
+                    <Input
+                      id="contactTelephone"
+                      value={contactTelephone}
+                      onChange={(e) => setContactTelephone(e.target.value)}
+                      className="flex-1"
+                    />
                   </div>
                 </div>
+
                 <div ref={contactEmailRef}>
-                  <Label className="text-sm font-medium text-gray-700 mb-2 block">Email</Label>
+                  <Label htmlFor="email" className="text-sm font-medium">Email</Label>
                   <Input
+                    id="email"
                     type="email"
-                    value={formData.contactEmail}
-                    onChange={(e) => handleInputChange("contactEmail", e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1"
                   />
                 </div>
               </div>
 
-              {/* Job Position */}
               <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">Job Position</Label>
-                <Input />
-              </div>
-
-              {/* Info Message */}
-              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Info className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                <span className="text-sm text-blue-700">You can add additional contacts in the next page</span>
-              </div>
-
-              {/* Required Fields Note */}
-              <div className="text-sm text-gray-600">
-                <span className="text-red-500">*</span> Required Fields
-              </div>
-
-              {/* Auto Generate Site Checkbox */}
-              <div className="flex items-center space-x-2" ref={autoGenerateSiteRef}>
-                <Checkbox 
-                  id="auto-generate-site" 
-                  className="text-teal-600" 
-                  checked={formData.autoGenerateSite}
-                  onCheckedChange={(checked) => handleInputChange("autoGenerateSite", checked as boolean)}
+                <Label htmlFor="jobPosition" className="text-sm font-medium">Job Position</Label>
+                <Input
+                  id="jobPosition"
+                  value={jobPosition}
+                  onChange={(e) => setJobPosition(e.target.value)}
+                  className="mt-1"
                 />
-                <Label htmlFor="auto-generate-site" className="text-sm text-gray-700">
-                  Auto generate a Site for this customer?
-                </Label>
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="mt-6 flex justify-end gap-3">
-          <Button variant="outline" className="px-6 bg-transparent">
-            Cancel
-          </Button>
-          <Button ref={saveButtonRef} onClick={handleSave} className="bg-green-600 hover:bg-green-700 text-white px-6">
-            Save
-          </Button>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg flex items-start gap-2">
+                <Info className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-700">
+                  You can add additional contacts in the next page
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -863,24 +918,6 @@ export function AddCustomerScreen({
           </div>
         </div>
       )}
-
-      {/* Congratulations Dialog */}
-      <Dialog open={showCongratulations} onOpenChange={setShowCongratulations}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <DialogTitle className="text-xl font-bold text-green-600">Congratulations!</DialogTitle>
-            <DialogDescription className="text-lg">You just created your first customer!</DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mt-4">
-            <Button onClick={handleContinueToLearningPath} className="bg-green-600 hover:bg-green-700">
-              Continue
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

@@ -19,13 +19,13 @@ export function CompanyDetailsScreen() {
   useEffect(() => {
     if (!data.companyDetails.companyName) {
       const prefilledData = {
-        companyName: "ElectroTech Solutions Ltd",
+        companyName: data.registration?.companyName || "ElectroTech Solutions Ltd",
         vatNumber: "GB123456789",
         registrationNumber: "12345678",
         website: "www.electrotechsolutions.co.uk",
         businessAddress: "Unit 12, Industrial Estate, Manchester, M15 4FN, United Kingdom",
-        phoneNumber: "+44 161 234 5678",
-        contactEmail: "info@electrotechsolutions.co.uk",
+        phoneNumber: data.registration?.countryCode + " " + data.registration?.mobileNumber || "+44 161 234 5678",
+        contactEmail: data.registration?.email || "info@electrotechsolutions.co.uk",
         timezone: "Greenwich Mean Time",
         currency: "GBP (£)",
         region: "UK",
