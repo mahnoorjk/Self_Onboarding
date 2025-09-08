@@ -64,7 +64,7 @@ const guideSteps: GuideStep[] = [
   {
     id: "sample-preview",
     title: "View Sample Report",
-    description: "Let's see what reports look like! Click the eye icon (👁️) in the Preview column for 'Outstanding Jobs by Engineer' to view a sample business report.",
+    description: "Let's see what reports look like! Click the eye icon (👁️) in the Preview column to view a report.",
     target: "outstanding-jobs-row",
     position: "top",
     highlight: true

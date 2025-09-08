@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar } from "lucide-react"
+import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar, X, CheckCircle2 } from "lucide-react"
 import { useState } from "react"
 
 interface CompletionScreenProps {
@@ -517,44 +517,102 @@ export function CompletionScreen({
         </CardContent>
       </Card>
 
-      {/* Video Placeholder Modal */}
+      {/* Enhanced Video Tutorial Modal */}
       <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5 text-blue-600" />
+            <DialogTitle className="sr-only">
               Invoice Creation Tutorial
             </DialogTitle>
-            <DialogDescription>
-              Learn how to create and send professional invoices from completed jobs.
+            <DialogDescription className="sr-only">
+              Learn how to create and send professional invoices from completed jobs
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-gray-100 rounded-lg flex items-center justify-center h-48">
-              <div className="text-center">
-                <Play className="w-16 h-16 text-gray-400 mx-auto mb-3" />
-                <div className="text-gray-600 font-medium">Video Coming Soon</div>
-                <div className="text-sm text-gray-500">Tutorial: How to Create and Send Invoices</div>
+          <div className="relative">
+            {/* Video Section with Enhanced Layout */}
+            <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden">
+              {/* Video Placeholder with realistic design */}
+              <div 
+                className="relative aspect-video bg-black flex items-center justify-center group cursor-pointer hover:bg-gray-900 transition-colors"
+                onClick={() => {
+                  // Here you would typically start the video playback
+                  // For now, we'll just close the modal as if video started
+                  setShowVideoModal(false)
+                }}
+              >
+                {/* Video thumbnail overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                
+                {/* Play button and content */}
+                <div className="relative z-10 text-center text-white">
+                  <div className="mb-4">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                      <Play className="w-8 h-8 ml-1 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">Invoice Creation Masterclass</h3>
+                  <p className="text-white/80 text-sm max-w-md mx-auto mb-2">
+                    Learn how to create professional invoices from completed jobs and streamline your billing process
+                  </p>
+                  <p className="text-white/60 text-xs">
+                    Click to start tutorial
+                  </p>
+                </div>
+
+                {/* Video duration badge */}
+                <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  5:32
+                </div>
+
+                {/* Progress bar at bottom (showing video is ready to play) */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                  <div className="h-full w-0 bg-teal-500"></div>
+                </div>
+              </div>
+
+              {/* Video Details Section */}
+              <div className="p-6 bg-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                      Complete Guide to Invoice Creation
+                    </h4>
+                    <p className="text-gray-600 text-sm">
+                      Master the art of professional invoicing and get paid faster
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Clock className="w-4 h-4" />
+                    5 min 32 sec
+                  </div>
+                </div>
+
+                {/* Learning objectives */}
+                <div className="border-t pt-4">
+                  <h5 className="font-medium text-gray-900 mb-3">What you'll learn:</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                      Convert jobs to invoices instantly
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                      Add materials and labor costs
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                      Customize invoice templates
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                      Send and track payments
+                    </div>
+                  </div>
+                </div>
+
+
               </div>
             </div>
-            <div className="space-y-2">
-              <div className="font-medium text-gray-900">This video will cover:</div>
-              <ul className="space-y-1 text-sm text-gray-600">
-                <li>• Converting completed jobs to invoices</li>
-                <li>• Adding pricing and labor costs</li>
-                <li>• Customizing invoice templates</li>
-                <li>• Sending invoices to customers</li>
-                <li>• Tracking payment status</li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex justify-center gap-3 mt-4">
-            <Button variant="outline" onClick={() => setShowVideoModal(false)}>
-              Close
-            </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setShowVideoModal(false)}>
-              Watch Tutorial
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

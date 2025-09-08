@@ -40,6 +40,8 @@ import {
   GraduationCap,
   Database,
   ArrowRight,
+  X,
+  CheckCircle2,
 } from "lucide-react"
 
 const tutorialCategories = [
@@ -614,6 +616,7 @@ export function TutorialsVideosScreen({
   const [learningPaths, setLearningPaths] = useState<LearningPath[]>(initialLearningPaths)
   const [selectedTutorial, setSelectedTutorial] = useState<any>(null)
   const [showVideoDialog, setShowVideoDialog] = useState(false)
+  const [showTutorialPreviewDialog, setShowTutorialPreviewDialog] = useState(false)
   const [showJobGuidedTourDialog, setShowJobGuidedTourDialog] = useState(false)
   const [showCustomerGuidedTourDialog, setShowCustomerGuidedTourDialog] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -756,9 +759,9 @@ export function TutorialsVideosScreen({
     completedTutorials: tutorials.filter(t => t.completed).map(t => `${t.id}: ${t.title}`)
   })
   
-  // TEMPORARY FIX: Force display to show 0% until parent component issue is resolved
-  const displayCompletedCount = 0
-  const displayProgress = 0
+  // Use actual calculated progress values
+  const displayCompletedCount = completedCount
+  const displayProgress = overallProgress
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -823,12 +826,23 @@ export function TutorialsVideosScreen({
       setShowCustomerGuidedTourDialog(true)
     } else {
       setSelectedTutorial(tutorial)
-      setShowVideoDialog(true)
+      
+      // Open appropriate modal based on tutorial type/category
+      if (tutorial.category === "video" || tutorial.type === "video") {
+        setShowVideoDialog(true)
+      } else {
+        setShowTutorialPreviewDialog(true)
+      }
     }
   }
 
   const handleCloseVideoDialog = () => {
     setShowVideoDialog(false)
+    setSelectedTutorial(null)
+  }
+
+  const handleCloseTutorialPreviewDialog = () => {
+    setShowTutorialPreviewDialog(false)
     setSelectedTutorial(null)
   }
 
@@ -838,7 +852,43 @@ export function TutorialsVideosScreen({
     } else if (tutorialTitle === "Creating Your First Customer") {
       setShowCustomerGuidedTourDialog(true)
     } else {
-      console.log(`Starting tutorial: ${tutorialTitle}`)
+      // For all other tutorials, open the video modal
+      const mockTutorial = {
+        id: tutorialTitle.toLowerCase().replace(/\s+/g, '-'),
+        title: tutorialTitle,
+        description: `Learn how to ${tutorialTitle.toLowerCase()} with this step-by-step tutorial.`,
+        duration: "3:45", // Default duration
+        category: "tutorial",
+        type: "video"
+      }
+      setSelectedTutorial(mockTutorial)
+      setShowVideoDialog(true)
+    }
+  }
+
+  const handleTutorialItemClick = (item: any) => {
+    if (item.title === "Logging your First Job") {
+      setShowJobGuidedTourDialog(true)
+    } else if (item.title === "Creating Your First Customer") {
+      setShowCustomerGuidedTourDialog(true)
+    } else {
+      // Create tutorial/video object with actual item data
+      const tutorial = {
+        id: item.title.toLowerCase().replace(/\s+/g, '-'),
+        title: item.title,
+        description: `Learn how to ${item.title.toLowerCase()} with this step-by-step guide.`,
+        duration: item.duration || "3:45",
+        category: "tutorial",
+        type: item.type || "video"
+      }
+      setSelectedTutorial(tutorial)
+      
+      // Open appropriate modal based on type
+      if (item.type === "video") {
+        setShowVideoDialog(true)
+      } else {
+        setShowTutorialPreviewDialog(true)
+      }
     }
   }
 
@@ -904,7 +954,7 @@ export function TutorialsVideosScreen({
                   {tutorials
                     .filter((tutorial) => tutorial.featured)
                     .map((tutorial) => (
-                      <Card key={tutorial.id} className="hover:shadow-md transition-shadow">
+                      <Card key={tutorial.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCardClick(tutorial)}>
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-2">
@@ -930,7 +980,10 @@ export function TutorialsVideosScreen({
                                   ? "bg-green-50 text-green-700 border-green-200"
                                   : "bg-teal-600 hover:bg-teal-700"
                               }
-                              onClick={() => toggleTutorialComplete(tutorial.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCardClick(tutorial)
+                              }}
                             >
                               {tutorial.completed ? (
                                 <>
@@ -1025,12 +1078,28 @@ export function TutorialsVideosScreen({
                         if (!tutorial) return null
 
                         return (
-                          <Card key={tutorial.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                          <Card key={tutorial.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleCardClick(tutorial)}>
                             <CardContent className="p-4">
                               <div className="flex items-start justify-between mb-3">
-                                <Badge className={getDifficultyColor(tutorial.difficulty || "")}>
-                                  {tutorial.difficulty}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={getDifficultyColor(tutorial.difficulty || "")}>
+                                    {tutorial.difficulty}
+                                  </Badge>
+                                  {/* Type indicator for tutorial vs video */}
+                                  <div className="flex items-center gap-1">
+                                    {tutorial.category === "video" || tutorial.type === "video" ? (
+                                      <>
+                                        <Video className="w-4 h-4 text-blue-600" />
+                                        <span className="text-xs text-blue-600 font-medium">Video</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <BookOpen className="w-4 h-4 text-green-600" />
+                                        <span className="text-xs text-green-600 font-medium">Tutorial</span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
                                 {tutorial.completed && <CheckCircle className="w-5 h-5 text-green-600" />}
                               </div>
                               <h4 className="font-medium mb-2">{tutorial.title}</h4>
@@ -1047,7 +1116,10 @@ export function TutorialsVideosScreen({
                                       ? "bg-green-50 text-green-700 border-green-200"
                                       : "bg-teal-600 hover:bg-teal-700"
                                   }
-                                  onClick={() => toggleTutorialComplete(tutorial.id)}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleCardClick(tutorial)
+                                  }}
                                 >
                                   {tutorial.completed ? (
                                     <CheckCircle className="w-4 h-4" />
@@ -1122,7 +1194,7 @@ export function TutorialsVideosScreen({
                             <div
                               key={itemIndex}
                               className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer transition-colors group"
-                              onClick={() => handleTutorialClick(item.title)}
+                              onClick={() => handleTutorialItemClick(item)}
                             >
                               <div className="flex items-center gap-4">
                                 <div
@@ -1154,7 +1226,15 @@ export function TutorialsVideosScreen({
                                   </div>
                                 </div>
                               </div>
-                              <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation() // Prevent triggering the parent div click
+                                  handleTutorialItemClick(item)
+                                }}
+                              >
                                 <Play className="w-4 h-4" />
                               </Button>
                             </div>
@@ -1335,20 +1415,287 @@ export function TutorialsVideosScreen({
         </DialogContent>
       </Dialog>
 
-      {/* Video Playback Dialog */}
+      {/* Enhanced Video Tutorial Modal */}
       <Dialog open={showVideoDialog} onOpenChange={setShowVideoDialog}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{selectedTutorial?.title}</DialogTitle>
-            <DialogDescription>{selectedTutorial?.description}</DialogDescription>
+            <DialogTitle className="sr-only">
+              {selectedTutorial?.title || "Tutorial Video"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              {selectedTutorial?.description || "Watch this tutorial video to learn more"}
+            </DialogDescription>
           </DialogHeader>
-          <div className="aspect-video w-full bg-gray-200 flex items-center justify-center text-gray-500">
-            {/* Placeholder for video player */}
-            Video Player for {selectedTutorial?.title}
+          <div className="relative">
+            {/* Video Section with Enhanced Layout */}
+            <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden">
+              {/* Video Placeholder with realistic design */}
+              <div 
+                className="relative aspect-video bg-black flex items-center justify-center group cursor-pointer hover:bg-gray-900 transition-colors"
+                onClick={() => {
+                  // Here you would typically start the video playback
+                  // For now, we'll just close the modal as if video started
+                  setShowVideoDialog(false)
+                }}
+              >
+                {/* Video thumbnail overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                
+                {/* Play button and content */}
+                <div className="relative z-10 text-center text-white">
+                  <div className="mb-4">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 group-hover:bg-white/30 group-hover:scale-110 transition-all duration-300">
+                      <Play className="w-8 h-8 ml-1 text-white" />
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">{selectedTutorial?.title || "Tutorial Video"}</h3>
+                  <p className="text-white/80 text-sm max-w-md mx-auto mb-2">
+                    {selectedTutorial?.description || "Learn step-by-step how to use this feature effectively"}
+                  </p>
+                  <p className="text-white/60 text-xs">
+                    Click to start tutorial
+                  </p>
+                </div>
+
+                {/* Video duration badge */}
+                <div className="absolute bottom-4 right-4 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                  {selectedTutorial?.duration || "3:45"}
+                </div>
+
+                {/* Progress bar at bottom (showing video is ready to play) */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                  <div className="h-full w-0 bg-teal-500"></div>
+                </div>
+              </div>
+
+              {/* Video Details Section */}
+              <div className="p-6 bg-white">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 mb-1">
+                      {selectedTutorial?.title || "Tutorial Video"}
+                    </h4>
+                    <p className="text-gray-600 text-sm">
+                      {selectedTutorial?.description || "Master this feature with our step-by-step guide"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Clock className="w-4 h-4" />
+                    {selectedTutorial?.duration || "3 min 45 sec"}
+                  </div>
+                </div>
+
+                {/* Learning objectives */}
+                {selectedTutorial?.objectives && (
+                  <div className="border-t pt-4">
+                    <h5 className="font-medium text-gray-900 mb-3">What you'll learn:</h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {selectedTutorial.objectives.map((objective: string, index: number) => (
+                        <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                          <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                          {objective}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleCloseVideoDialog}>Close</Button>
-          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tutorial Text Preview Modal */}
+      <Dialog open={showTutorialPreviewDialog} onOpenChange={setShowTutorialPreviewDialog}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-teal-600" />
+              {selectedTutorial?.title || "Tutorial Preview"}
+            </DialogTitle>
+            <DialogDescription>
+              Get a quick preview of this tutorial content
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Tutorial Overview - Reduced size */}
+            <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-lg p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                    {selectedTutorial?.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-2">
+                    {selectedTutorial?.description}
+                  </p>
+                  <div className="flex items-center gap-4 text-sm text-gray-500">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      <span>Reading time: {selectedTutorial?.duration || "5-8 min"}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <BookOpen className="w-4 h-4" />
+                      <span>Interactive Tutorial</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge className="bg-teal-100 text-teal-800">Tutorial</Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Tutorial Content Preview - Increased size */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-gray-900">Tutorial Content Preview:</h4>
+              <div className="bg-white border rounded-lg p-6 max-h-[500px] overflow-y-auto">
+                <div className="prose prose-sm max-w-none">
+                  {/* Actual tutorial content based on the title */}
+                  {selectedTutorial?.title === "Find a Customer, Site or Job Quickly" && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold mb-3">Quick Search and Navigation</h3>
+                      <p className="text-gray-700">
+                        Finding the right customer, site, or job quickly is essential for efficient workflow management. 
+                        This tutorial will show you how to use joblogic's powerful search features to locate information instantly.
+                      </p>
+                      <h4 className="font-medium mt-4 mb-2">Using the Global Search</h4>
+                      <p className="text-gray-700">
+                        The global search bar at the top of your dashboard allows you to search across all your data:
+                      </p>
+                      <ol className="list-decimal ml-6 space-y-2 text-gray-700">
+                        <li>Click on the search bar or press <kbd className="bg-gray-100 px-2 py-1 rounded text-sm">Ctrl+K</kbd></li>
+                        <li>Type the customer name, job reference, or site address</li>
+                        <li>Select from the dropdown results or press Enter</li>
+                      </ol>
+                      <p className="text-gray-600 text-sm italic mt-3">
+                        Preview continues... Click "Start Full Tutorial" to see the complete guide with screenshots and interactive examples.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {selectedTutorial?.title === "Use the Planner to View & Schedule Jobs" && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold mb-3">Mastering the Job Planner</h3>
+                      <p className="text-gray-700">
+                        The job planner is your central hub for viewing, organizing, and scheduling all your work. 
+                        Learn how to maximize efficiency with advanced planning features.
+                      </p>
+                      <h4 className="font-medium mt-4 mb-2">Planner Views</h4>
+                      <p className="text-gray-700">
+                        joblogic offers multiple planner views to suit different working styles:
+                      </p>
+                      <ul className="list-disc ml-6 space-y-1 text-gray-700">
+                        <li><strong>Day View:</strong> Detailed hour-by-hour scheduling</li>
+                        <li><strong>Week View:</strong> Overview of the entire week</li>
+                        <li><strong>Month View:</strong> Long-term planning perspective</li>
+                        <li><strong>Engineer View:</strong> See all jobs assigned to specific team members</li>
+                      </ul>
+                      <h4 className="font-medium mt-4 mb-2">Scheduling a New Job</h4>
+                      <p className="text-gray-700">
+                        To schedule a job from the planner:
+                      </p>
+                      <ol className="list-decimal ml-6 space-y-1 text-gray-700">
+                        <li>Navigate to the desired date and time slot</li>
+                        <li>Click and drag to create a new appointment block</li>
+                        <li>Select the customer and job type from the dropdown...</li>
+                      </ol>
+                      <p className="text-gray-600 text-sm italic mt-3">
+                        Preview continues with drag-and-drop scheduling, conflict resolution, and mobile planner tips...
+                      </p>
+                    </div>
+                  )}
+                  
+                  {selectedTutorial?.title === "Edit or Reassign a Job" && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold mb-3">Job Management and Reassignment</h3>
+                      <p className="text-gray-700">
+                        Sometimes you need to modify job details or reassign work to different team members. 
+                        This tutorial covers all aspects of job editing and reassignment.
+                      </p>
+                      <h4 className="font-medium mt-4 mb-2">Editing Job Details</h4>
+                      <p className="text-gray-700">
+                        To modify an existing job:
+                      </p>
+                      <ol className="list-decimal ml-6 space-y-2 text-gray-700">
+                        <li>Locate the job in your planner or job list</li>
+                        <li>Click on the job card to open the details panel</li>
+                        <li>Click the "Edit" button in the top-right corner</li>
+                        <li>Modify any field including:
+                          <ul className="list-disc ml-6 mt-1 space-y-1">
+                            <li>Customer information</li>
+                            <li>Job description and notes</li>
+                            <li>Scheduled date and time</li>
+                            <li>Priority level</li>
+                          </ul>
+                        </li>
+                      </ol>
+                      <h4 className="font-medium mt-4 mb-2">Reassigning to Another Engineer</h4>
+                      <p className="text-gray-700">
+                        To reassign a job to a different team member:
+                      </p>
+                      <p className="text-gray-600 text-sm italic mt-3">
+                        Preview shows the first section... Full tutorial includes bulk reassignment, notification settings, and conflict handling.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Default content for other tutorials */}
+                  {!["Find a Customer, Site or Job Quickly", "Use the Planner to View & Schedule Jobs", "Edit or Reassign a Job"].includes(selectedTutorial?.title) && (
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold mb-3">{selectedTutorial?.title}</h3>
+                      <p className="text-gray-700">
+                        This comprehensive tutorial will guide you through {selectedTutorial?.title?.toLowerCase()} 
+                        with step-by-step instructions, practical examples, and best practices.
+                      </p>
+                      <h4 className="font-medium mt-4 mb-2">Getting Started</h4>
+                      <p className="text-gray-700">
+                        Before we begin, make sure you have access to your joblogic dashboard and the necessary 
+                        permissions for this feature. This tutorial is designed for users of all experience levels.
+                      </p>
+                      <h4 className="font-medium mt-4 mb-2">Overview</h4>
+                      <p className="text-gray-700">
+                        In this tutorial, you'll learn the fundamentals of {selectedTutorial?.title?.toLowerCase()}, 
+                        including common workflows, troubleshooting tips, and advanced techniques that will help 
+                        you work more efficiently.
+                      </p>
+                      <ol className="list-decimal ml-6 space-y-1 text-gray-700 mt-3">
+                        <li>Understanding the interface and navigation</li>
+                        <li>Step-by-step process walkthrough</li>
+                        <li>Best practices and common pitfalls</li>
+                        <li>Advanced tips and shortcuts</li>
+                      </ol>
+                      <p className="text-gray-600 text-sm italic mt-4">
+                        This is just the beginning... The full tutorial contains detailed screenshots, interactive examples, and practice exercises.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button 
+                className="flex-1 bg-teal-600 hover:bg-teal-700 text-white"
+                onClick={() => {
+                  // Here you would navigate to the full tutorial screen
+                  setShowTutorialPreviewDialog(false)
+                  console.log('Navigate to full tutorial:', selectedTutorial?.title)
+                }}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Start Full Tutorial
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleCloseTutorialPreviewDialog}
+                className="px-6"
+              >
+                Later
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
