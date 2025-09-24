@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar, X, CheckCircle2 } from "lucide-react"
+import { CheckCircle, ArrowRight, Users, FileText, TrendingUp, DollarSign, BarChart3, Play, Clock, Target, Zap, GraduationCap, Calendar, X, CheckCircle2, AlertCircle, MapPin } from "lucide-react"
 import { useState } from "react"
 
 interface CompletionScreenProps {
@@ -53,6 +53,10 @@ export function CompletionScreen({
 }: CompletionScreenProps = {}) {
   const { setCurrentStep, data } = useOnboarding()
   const [showVideoModal, setShowVideoModal] = useState(false)
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false)
+  const [showProgressCongratulations, setShowProgressCongratulations] = useState(false)
+  // Simulated video progress state (replace with actual video player logic)
+  const [videoProgress, setVideoProgress] = useState(0) // percent watched
 
   const handleGoBack = () => {
     setCurrentStep(3) // Go back to Work in Progress screen (now step 3)
@@ -62,6 +66,22 @@ export function CompletionScreen({
     if (onTaskCompleted) {
       onTaskCompleted(taskId)
     }
+  }
+
+  const handleProgressContinue = () => {
+    setShowProgressCongratulations(false)
+    // Mark the invoice task as completed if not already done
+    markTaskCompleted("create-invoice")
+    // Could add navigation to dashboard here
+  }
+
+  const handleProgressBackToTutorials = () => {
+    setShowProgressCongratulations(false)
+    // Mark the invoice task as completed if not already done
+    markTaskCompleted("create-invoice")
+    if (onNavigateToTutorials) {
+      onNavigateToTutorials()
+    }  
   }
 
   const hasWIPJobs = data.workInProgress?.hasWIPJobs
@@ -518,7 +538,17 @@ export function CompletionScreen({
       </Card>
 
       {/* Enhanced Video Tutorial Modal */}
-      <Dialog open={showVideoModal} onOpenChange={setShowVideoModal}>
+      <Dialog open={showVideoModal} onOpenChange={val => {
+        // If closing, check video progress
+        if (!val) {
+          if (videoProgress < 90) {
+            // Video not completed - show follow up modal
+            setShowFollowUpModal(true)
+          }
+          // If video is completed (>=90), progress congratulations is handled by click handlers
+        }
+        setShowVideoModal(val)
+      }}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle className="sr-only">
@@ -535,9 +565,14 @@ export function CompletionScreen({
               <div 
                 className="relative aspect-video bg-black flex items-center justify-center group cursor-pointer hover:bg-gray-900 transition-colors"
                 onClick={() => {
-                  // Here you would typically start the video playback
-                  // For now, we'll just close the modal as if video started
-                  setShowVideoModal(false)
+                  // Simulate watching video: increase progress by 50% per click for demo
+                  const newProgress = Math.min(videoProgress + 50, 100)
+                  setVideoProgress(newProgress)
+                  // If progress now >= 90, mark as completed and show progress congratulations
+                  if (newProgress >= 90) {
+                    setShowVideoModal(false)
+                    setShowProgressCongratulations(true)
+                  }
                 }}
               >
                 {/* Video thumbnail overlay */}
@@ -555,7 +590,7 @@ export function CompletionScreen({
                     Learn how to create professional invoices from completed jobs and streamline your billing process
                   </p>
                   <p className="text-white/60 text-xs">
-                    Click to start tutorial
+                    Click to simulate watching tutorial ({videoProgress}% watched)
                   </p>
                 </div>
 
@@ -564,9 +599,9 @@ export function CompletionScreen({
                   5:32
                 </div>
 
-                {/* Progress bar at bottom (showing video is ready to play) */}
+                {/* Progress bar at bottom */}
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-                  <div className="h-full w-0 bg-teal-500"></div>
+                  <div className="h-full bg-teal-500" style={{ width: `${videoProgress}%` }}></div>
                 </div>
               </div>
 
@@ -610,12 +645,181 @@ export function CompletionScreen({
                   </div>
                 </div>
 
-
+                {/* Action buttons */}
+                <div className="flex gap-3 mt-6 pt-4 border-t">
+                  <Button 
+                    className="flex-1 bg-teal-600 hover:bg-teal-700 text-white"
+                    onClick={() => {
+                      const newProgress = Math.min(videoProgress + 50, 100)
+                      setVideoProgress(newProgress)
+                      if (newProgress >= 90) {
+                        setShowVideoModal(false)
+                        setShowProgressCongratulations(true)
+                      }
+                    }}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Resume Tutorial
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowVideoModal(false)}
+                    className="px-6"
+                  >
+                    Close
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Follow-up Modal if video not completed */}
+      <Dialog open={showFollowUpModal} onOpenChange={setShowFollowUpModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-orange-600" />
+              Almost Done!
+            </DialogTitle>
+            <DialogDescription>
+              You haven’t finished the onboarding tutorial yet. Watching the full video will help you unlock all features and get started faster.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="text-gray-700 mb-4">
+              Would you like to continue watching the tutorial?
+            </div>
+            <div className="flex gap-3">
+              <Button className="flex-1 bg-teal-600 hover:bg-teal-700 text-white" onClick={() => {
+                setShowFollowUpModal(false)
+                setShowVideoModal(true)
+              }}>
+                <Play className="w-4 h-4 mr-2" />
+                Resume Tutorial
+              </Button>
+              <Button variant="outline" onClick={() => setShowFollowUpModal(false)}>
+                Skip for Now
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Progress Congratulations Dialog - Simple Modal */}
+      {showProgressCongratulations && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => {
+              setShowProgressCongratulations(false)
+              markTaskCompleted("create-invoice")
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+            {/* Close X button */}
+            <button
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                markTaskCompleted("create-invoice")
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">🎉 Invoice Tutorial Complete!</h2>
+            </div>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step 5 of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines - all completed */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ width: 'calc(100% - 32px)' }}
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Site</span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                Amazing! You've completed the full customer-to-invoice workflow. You're now ready to manage your business efficiently with Joblogic!
+              </p>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={handleProgressContinue}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                >
+                  Explore Your Dashboard
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

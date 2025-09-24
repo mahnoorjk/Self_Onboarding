@@ -39,6 +39,10 @@ import {
   Lightbulb,
   RotateCcw,
   Info,
+  TrendingUp,
+  Users,
+  MapPin,
+  FileText,
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -172,22 +176,23 @@ const guideSteps: GuideStep[] = [
 interface LogJobScreenProps {
   onJobSaveSuccess: () => void
   onNavigateBackToTutorials?: () => void
+  onNavigateToCreateInvoice?: () => void
   showGuide?: boolean // When true, shows simplified version (from completion screen tasks)
 }
 
-export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, showGuide = false }: LogJobScreenProps) {
+export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, onNavigateToCreateInvoice, showGuide = false }: LogJobScreenProps) {
   const [activeTab, setActiveTab] = useState("customer-site")
-  const [selectedCustomer, setSelectedCustomer] = useState("")
-  const [selectedSite, setSelectedSite] = useState("")
+  const [selectedCustomer, setSelectedCustomer] = useState("Sample Customer 2")
+  const [selectedSite, setSelectedSite] = useState("Sample Site 1")
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false)
   const [showSiteDropdown, setShowSiteDropdown] = useState(false)
   const [logFromRecent, setLogFromRecent] = useState(false)
   const [logFromTemplate, setLogFromTemplate] = useState(false)
   const [showAssociatedOnly, setShowAssociatedOnly] = useState(false)
   const [jobType, setJobType] = useState("Maintenance")
-  const [jobCategory, setJobCategory] = useState("")
-  const [description, setDescription] = useState("")
-  const [primaryTrade, setPrimaryTrade] = useState("")
+  const [jobCategory, setJobCategory] = useState("General Maintenance")
+  const [description, setDescription] = useState("Sample job description - routine maintenance check")
+  const [primaryTrade, setPrimaryTrade] = useState("General Maintenance")
   const [secondaryTradesList, setSecondaryTradesList] = useState<string[]>([])
   const [customerOrderNumber, setCustomerOrderNumber] = useState("")
   const [referenceNumber, setReferenceNumber] = useState("")
@@ -196,18 +201,19 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
   const [jobRef1, setJobRef1] = useState("")
   const [jobRef2, setJobRef2] = useState("")
   const [reqApproval, setReqApproval] = useState(false)
-  const [priorityLevel, setPriorityLevel] = useState("")
+  const [priorityLevel, setPriorityLevel] = useState("Medium")
   const [completionTimeFromLogged, setCompletionTimeFromLogged] = useState(true)
   const [preferredDate, setPreferredDate] = useState<Date>()
   const [startDate, setStartDate] = useState<Date>(new Date())
   const [endDate, setEndDate] = useState<Date>(new Date())
   const [assignToEngineer, setAssignToEngineer] = useState(true)
-  const [selectedEngineer, setSelectedEngineer] = useState("")
+  const [selectedEngineer, setSelectedEngineer] = useState("John Smith")
   const [deployToMobile, setDeployToMobile] = useState(false)
   const [recurJob, setRecurJob] = useState(false)
   const [contactSearch, setContactSearch] = useState("")
   const [loggedWithinPeriod, setLoggedWithinPeriod] = useState("10 Days")
   const [showCongratulations, setShowCongratulations] = useState(false)
+  const [showProgressCongratulations, setShowProgressCongratulations] = useState(false)
   const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState(false)
 
   // Guide state
@@ -426,13 +432,89 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
     setSecondaryTradesList(secondaryTradesList.filter((t) => t !== trade))
   }
 
+  const validateJobForm = (): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = []
+
+    // Required fields validation
+    if (!selectedCustomer) errors.push("Please select a customer")
+    if (!selectedSite) errors.push("Please select a site")
+    if (!jobType) errors.push("Please select a job type")
+    if (!description.trim()) errors.push("Please enter a job description")
+    if (!primaryTrade) errors.push("Please select a primary trade")
+    if (!jobOwner) errors.push("Please select a job owner")
+    
+    // Optional but commonly required fields
+    if (assignToEngineer && !selectedEngineer) {
+      errors.push("Please assign an engineer to this job")
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors
+    }
+  }
+
   const handleSave = () => {
-    setShowCongratulations(true)
-    onJobSaveSuccess()
+    // Validate the job form first
+    const validation = validateJobForm()
+    
+    if (!validation.isValid) {
+      // Show validation errors (you could implement a toast or alert here)
+      alert(`Please complete the following required fields:\n\n• ${validation.errors.join('\n• ')}`)
+      return
+    }
+
+    // If validation passes, collect the job data (for demo purposes, just log it)
+    const jobData = {
+      customer: selectedCustomer,
+      site: selectedSite,
+      jobType,
+      jobCategory,
+      description,
+      primaryTrade,
+      secondaryTrades: secondaryTradesList,
+      customerOrderNumber,
+      referenceNumber,
+      jobOwner,
+      dateLogged,
+      jobRef1,
+      jobRef2,
+      reqApproval,
+      priorityLevel,
+      preferredDate,
+      startDate,
+      endDate,
+      assignToEngineer,
+      selectedEngineer: assignToEngineer ? selectedEngineer : null,
+      deployToMobile,
+      recurJob
+    }
+
+    // Log the collected data (in a real app, this would be sent to an API)
+    console.log("Job saved:", jobData)
+
+    // Show progress congratulations - don't call onJobSaveSuccess until user interacts
+    setShowProgressCongratulations(true)
   }
 
   const handleContinue = () => {
     setShowCongratulations(false)
+    if (onNavigateBackToTutorials) {
+      onNavigateBackToTutorials()
+    }
+  }
+
+  const handleContinueToNextStep = () => {
+    setShowProgressCongratulations(false)
+    onJobSaveSuccess()
+    if (onNavigateToCreateInvoice) {
+      onNavigateToCreateInvoice()
+    }
+  }
+
+  const handleBackToTutorials = () => {
+    setShowProgressCongratulations(false)
+    onJobSaveSuccess()
     if (onNavigateBackToTutorials) {
       onNavigateBackToTutorials()
     }
@@ -993,7 +1075,12 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
               <Button variant="outline" className="bg-transparent">
                 Cancel
               </Button>
-              <Button ref={saveButtonRef} className="bg-green-600 hover:bg-green-700" onClick={handleSave}>
+              <Button 
+                ref={saveButtonRef} 
+                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+                onClick={handleSave}
+                disabled={!selectedCustomer || !selectedSite || !jobType || !description.trim() || !primaryTrade || !jobOwner}
+              >
                 Save
               </Button>
             </div>
@@ -1089,6 +1176,130 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Progress Congratulations Dialog - Simple Modal */}
+        {showProgressCongratulations && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-50"
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                onJobSaveSuccess()
+              }}
+            />
+            
+            {/* Modal Content */}
+            <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+              {/* Close X button */}
+              <button
+                onClick={() => {
+                  setShowProgressCongratulations(false)
+                  onJobSaveSuccess()
+                }}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                🎉 Job Created!
+              </h2>
+            </div>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step 4 of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ width: 'calc(75% + 8px)' }} // Connect to job icon
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Site</span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>              <div className="space-y-4">
+                <p className="text-sm text-gray-600 text-center leading-relaxed">
+                  Outstanding! You've successfully logged your job. The final step is creating an invoice to get paid for your work.
+                </p>
+
+                <div className="space-y-3 pt-2">
+                  <Button 
+                    onClick={handleContinueToNextStep}
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                  >
+                    Continue to Create Invoice
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                  
+                  {onNavigateBackToTutorials && (
+                    <Button 
+                      variant="outline" 
+                      onClick={handleBackToTutorials}
+                      className="w-full"
+                    >
+                      Back to Basics
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -1811,7 +2022,12 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
             <Button variant="outline" className="bg-transparent">
               Cancel
             </Button>
-            <Button ref={saveButtonRef} className="bg-green-600 hover:bg-green-700" onClick={handleSave}>
+            <Button 
+              ref={saveButtonRef} 
+              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed" 
+              onClick={handleSave}
+              disabled={!selectedCustomer || !selectedSite || !jobType || !description.trim() || !primaryTrade || !jobOwner}
+            >
               Save
             </Button>
           </div>
@@ -1907,6 +2123,132 @@ export function LogJobScreen({ onJobSaveSuccess, onNavigateBackToTutorials, show
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Progress Congratulations Dialog - Simple Modal */}
+      {showProgressCongratulations && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => {
+              setShowProgressCongratulations(false)
+              onJobSaveSuccess()
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+            {/* Close button in corner */}
+            <button
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                onJobSaveSuccess()
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                🎉 Job Created!
+              </h2>
+            </div>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step 4 of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ width: 'calc(75% + 8px)' }} // Connect to job icon
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Site</span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                Outstanding! You've logged a job. The final step is creating an invoice to get paid for your work.
+              </p>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={handleContinueToNextStep}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                >
+                  Continue to Create Invoice
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                
+                {onNavigateBackToTutorials && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBackToTutorials}
+                    className="w-full"
+                  >
+                    Back to Basics
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

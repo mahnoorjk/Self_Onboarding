@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar, CalendarIcon, Plus, X, Target, ArrowLeft, ArrowRight, ChevronRight, ChevronLeft, CheckCircle, Lightbulb, HelpCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Calendar, CalendarIcon, Plus, X, Target, ArrowLeft, ArrowRight, ChevronRight, ChevronLeft, CheckCircle, Lightbulb, HelpCircle, FileText, Users, MapPin } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
 
 interface GuideStep {
   id: string
@@ -102,12 +103,14 @@ const guideSteps: GuideStep[] = [
 interface LogQuoteScreenProps {
   onQuoteSaveSuccess?: () => void
   onNavigateBackToTutorials?: () => void
+  onNavigateToCreateJob?: () => void
   showGuide?: boolean
 }
 
 export function LogQuoteScreen({ 
   onQuoteSaveSuccess, 
   onNavigateBackToTutorials, 
+  onNavigateToCreateJob,
   showGuide = false 
 }: LogQuoteScreenProps) {
   const [customer, setCustomer] = useState("")
@@ -130,6 +133,7 @@ export function LogQuoteScreen({
   const [quoteOwner, setQuoteOwner] = useState("mahnoorj+fsm@joblogic.com")
   const [chanceOfSale, setChanceOfSale] = useState([25])
   const [showCongratulations, setShowCongratulations] = useState(false)
+  const [showProgressCongratulations, setShowProgressCongratulations] = useState(false)
 
   // Guide state
   const [isGuideActive, setIsGuideActive] = useState(false)
@@ -359,10 +363,9 @@ export function LogQuoteScreen({
 
   const handleSave = () => {
     console.log("Quote saved!", { customer, site, jobType, description, quoteReferenceNumber, sourceOfEnquiry })
-    setShowCongratulations(true)
-    if (onQuoteSaveSuccess) {
-      onQuoteSaveSuccess()
-    }
+    
+    // Show progress congratulations first - don't call onQuoteSaveSuccess until user interacts
+    setShowProgressCongratulations(true)
 
     // If guide is active, complete it
     if (isGuideActive) {
@@ -379,6 +382,22 @@ export function LogQuoteScreen({
 
   const handleContinueToLearningPath = () => {
     setShowCongratulations(false)
+    if (onNavigateBackToTutorials) {
+      onNavigateBackToTutorials()
+    }
+  }
+
+  const handleContinueToNextStep = () => {
+    setShowProgressCongratulations(false)
+    if (onQuoteSaveSuccess) onQuoteSaveSuccess()
+    if (onNavigateToCreateJob) {
+      onNavigateToCreateJob()
+    }
+  }
+
+  const handleBackToTutorials = () => {
+    setShowProgressCongratulations(false)
+    if (onQuoteSaveSuccess) onQuoteSaveSuccess()
     if (onNavigateBackToTutorials) {
       onNavigateBackToTutorials()
     }
@@ -1074,6 +1093,132 @@ export function LogQuoteScreen({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Progress Congratulations Dialog - Simple Modal */}
+      {showProgressCongratulations && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => {
+              setShowProgressCongratulations(false)
+              if (onQuoteSaveSuccess) onQuoteSaveSuccess()
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+            {/* Close button in corner */}
+            <button
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                if (onQuoteSaveSuccess) onQuoteSaveSuccess()
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                🎉 Quote Created!
+              </h2>
+            </div>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step 3 of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ width: 'calc(50% + 8px)' }} // Connect to quote icon
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Site</span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                Perfect! Your quote looks professional. Now let's convert this into a job to start the actual work.
+              </p>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={handleContinueToNextStep}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                >
+                  Continue to Create Job
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                
+                {onNavigateBackToTutorials && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBackToTutorials}
+                    className="w-full"
+                  >
+                    Back to Basics
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

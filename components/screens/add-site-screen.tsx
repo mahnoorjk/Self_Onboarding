@@ -7,20 +7,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Plus, Info, X, ArrowRight, ArrowLeft, CheckCircle, Target, Lightbulb, HelpCircle } from "lucide-react"
+
+import { Plus, Info, X, ArrowRight, ArrowLeft, CheckCircle, Target, Lightbulb, HelpCircle, MapPin, Users, FileText } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 interface AddSiteScreenProps {
   onSiteSaveSuccess?: () => void
   onNavigateBackToTutorials?: () => void
+  onNavigateToCreateQuote?: () => void
   showGuide?: boolean
 }
 
@@ -131,6 +125,7 @@ const guideSteps: GuideStep[] = [
 export function AddSiteScreen({ 
   onSiteSaveSuccess, 
   onNavigateBackToTutorials, 
+  onNavigateToCreateQuote,
   showGuide = false 
 }: AddSiteScreenProps) {
   // Guide state
@@ -138,6 +133,7 @@ export function AddSiteScreen({
   const [currentGuideStep, setCurrentGuideStep] = useState(0)
   const [guideOverlayPosition, setGuideOverlayPosition] = useState({ top: 0, left: 0, width: 0, height: 0 })
   const [showStartGuideButton, setShowStartGuideButton] = useState(false)
+  const [showProgressCongratulations, setShowProgressCongratulations] = useState(false)
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 })
 
   // Form state
@@ -439,9 +435,35 @@ export function AddSiteScreen({
       setIsGuideActive(false)
     }
     
-    // Call the appropriate save success callback
+    // Show progress congratulations dialog
+    setShowProgressCongratulations(true)
+    
+    // Don't call onSiteSaveSuccess() here - wait for user to interact with dialog
+  }
+
+  const handleContinueToNextStep = () => {
+    setShowProgressCongratulations(false)
+    
+    // Call success callback to mark as completed and trigger navigation
     if (onSiteSaveSuccess) {
       onSiteSaveSuccess()
+    }
+    
+    if (onNavigateToCreateQuote) {
+      onNavigateToCreateQuote()
+    }
+  }
+
+  const handleBackToTutorials = () => {
+    setShowProgressCongratulations(false)
+    
+    // Call success callback to mark as completed
+    if (onSiteSaveSuccess) {
+      onSiteSaveSuccess()
+    }
+    
+    if (onNavigateBackToTutorials) {
+      onNavigateBackToTutorials()
     }
   }
 
@@ -913,6 +935,132 @@ export function AddSiteScreen({
                     </>
                   )}
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Congratulations Dialog - Simple Modal */}
+      {showProgressCongratulations && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => {
+              setShowProgressCongratulations(false)
+              if (onSiteSaveSuccess) onSiteSaveSuccess()
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+            {/* Close button in corner */}
+            <button
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                if (onSiteSaveSuccess) onSiteSaveSuccess()
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                🎉 Site Created!
+              </h2>
+            </div>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step 2 of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ width: 'calc(25% + 8px)' }} // Connect to site icon
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <MapPin className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Site</span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                Excellent! Your site is ready. Next, let's create a quote to show your customer what services you can provide.
+              </p>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={handleContinueToNextStep}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                >
+                  Continue to Create Quote
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                
+                {onNavigateBackToTutorials && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBackToTutorials}
+                    className="w-full"
+                  >
+                    Back to Basics
+                  </Button>
+                )}
               </div>
             </div>
           </div>

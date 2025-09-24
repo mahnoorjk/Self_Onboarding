@@ -15,12 +15,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Plus, Info, X, ArrowRight, ArrowLeft, CheckCircle, Target, Lightbulb, HelpCircle } from "lucide-react"
+import { Plus, Info, X, ArrowRight, ArrowLeft, CheckCircle, Target, Lightbulb, HelpCircle, Users, MapPin, FileText } from "lucide-react"
 
 interface AddCustomerScreenProps {
   onCustomerSaveSuccess: () => void
   onNavigateBackToTutorials?: () => void
   onNavigateToSiteScreen?: () => void
+  onNavigateToAddSiteWithGuide?: () => void
   showGuide?: boolean
 }
 
@@ -139,9 +140,18 @@ export function AddCustomerScreen({
   onCustomerSaveSuccess,
   onNavigateBackToTutorials,
   onNavigateToSiteScreen,
+  onNavigateToAddSiteWithGuide,
   showGuide = false,
 }: AddCustomerScreenProps) {
-  const [showCongratulations, setShowCongratulations] = useState(false)
+  const [showProgressCongratulations, setShowProgressCongratulations] = useState(false)
+  
+  console.log("AddCustomerScreen props:", {
+    onCustomerSaveSuccess: !!onCustomerSaveSuccess,
+    onNavigateBackToTutorials: !!onNavigateBackToTutorials,
+    onNavigateToSiteScreen: !!onNavigateToSiteScreen,
+    onNavigateToAddSiteWithGuide: !!onNavigateToAddSiteWithGuide,
+    showGuide
+  })
 
   // Guide state
   const [isGuideActive, setIsGuideActive] = useState(false)
@@ -176,6 +186,21 @@ export function AddCustomerScreen({
   const contactEmailRef = useRef<HTMLDivElement>(null)
   const autoGenerateSiteRef = useRef<HTMLDivElement>(null)
   const saveButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Debug state changes
+  useEffect(() => {
+    console.log("showProgressCongratulations changed:", showProgressCongratulations)
+    if (showProgressCongratulations) {
+      console.log("Dialog should be visible now!")
+    }
+  }, [showProgressCongratulations])
+
+  // Test dialog functionality on mount
+  useEffect(() => {
+    console.log("AddCustomerScreen mounted")
+    // Auto-show dialog disabled - dialog only shows on save
+    // setTimeout(() => setShowProgressCongratulations(true), 2000)
+  }, [])
 
   // Initialize guide when showGuide prop is true (auto-start from tutorials)
   useEffect(() => {
@@ -451,25 +476,39 @@ export function AddCustomerScreen({
       setIsGuideActive(false)
     }
 
+    // Show progress congratulations dialog
+    console.log("Setting showProgressCongratulations to true")
+    setShowProgressCongratulations(true)
+    
+    // Don't call onCustomerSaveSuccess() here - wait for user to click Continue
+  }
+
+  const handleContinueToNextStep = () => {
+    setShowProgressCongratulations(false)
+    
+    // Call the success callback to trigger navigation
+    onCustomerSaveSuccess()
+    
     // Check auto generate site checkbox to determine navigation
     if (formData.autoGenerateSite) {
-      // Auto generate site is checked - follow normal flow
-      onCustomerSaveSuccess()
-      setShowCongratulations(true)
+      // Auto generate site is checked - continue to quotes
+      // This will be handled by parent component navigation
     } else {
       // Auto generate site is unchecked - navigate to add site screen with tutorial
-      if (onNavigateToSiteScreen) {
+      if (onNavigateToAddSiteWithGuide) {
+        onNavigateToAddSiteWithGuide()
+      } else if (onNavigateToSiteScreen) {
         onNavigateToSiteScreen()
-      } else {
-        // Fallback to normal flow if callback not provided
-        onCustomerSaveSuccess()
-        setShowCongratulations(true)
       }
     }
   }
 
-  const handleContinueToLearningPath = () => {
-    setShowCongratulations(false)
+  const handleBackToTutorials = () => {
+    setShowProgressCongratulations(false)
+    
+    // Call success callback to mark task as completed
+    onCustomerSaveSuccess()
+    
     if (onNavigateBackToTutorials) {
       onNavigateBackToTutorials()
     }
@@ -786,7 +825,25 @@ export function AddCustomerScreen({
           <Button variant="outline" className="px-6 bg-transparent">
             Cancel
           </Button>
-          <Button ref={saveButtonRef} onClick={handleSave} className="bg-green-600 hover:bg-green-700 text-white px-6">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              console.log("Test button clicked")
+              setShowProgressCongratulations(true)
+            }} 
+            className="px-6 bg-blue-100 text-blue-700"
+          >
+            Test Dialog
+          </Button>
+          <Button 
+            ref={saveButtonRef} 
+            onClick={(e) => {
+              e.preventDefault()
+              console.log("Save button clicked - event:", e)
+              handleSave()
+            }} 
+            className="bg-green-600 hover:bg-green-700 text-white px-6"
+          >
             Save
           </Button>
         </div>
@@ -864,23 +921,145 @@ export function AddCustomerScreen({
         </div>
       )}
 
-      {/* Congratulations Dialog */}
-      <Dialog open={showCongratulations} onOpenChange={setShowCongratulations}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader className="text-center">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+      {/* Progress Congratulations Dialog - Simple Modal */}
+      {showProgressCongratulations && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50"
+            onClick={() => {
+              setShowProgressCongratulations(false)
+              onCustomerSaveSuccess() // Mark as completed even if just closing
+            }}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10">
+            {/* Close button in corner */}
+            <button
+              onClick={() => {
+                setShowProgressCongratulations(false)
+                onCustomerSaveSuccess() // Mark as completed even if just closing
+              }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="text-center pb-2">
+              <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                {formData.autoGenerateSite ? "🎉 Customer & Site Created!" : "🎉 Customer Created!"}
+              </h2>
             </div>
-            <DialogTitle className="text-xl font-bold text-green-600">Congratulations!</DialogTitle>
-            <DialogDescription className="text-lg">You just created your first customer!</DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-center mt-4">
-            <Button onClick={handleContinueToLearningPath} className="bg-green-600 hover:bg-green-700">
-              Continue
-            </Button>
+
+            {/* Enhanced Progress Bar with Integrated Icons */}
+            <div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <div className="flex justify-center items-center mb-4">
+                <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
+                  Step {formData.autoGenerateSite ? '2' : '1'} of 5
+                </span>
+              </div>
+              
+              {/* Icons with connecting progress lines */}
+              <div className="relative">
+                <div className="flex justify-between items-center relative">
+                  {/* Background connecting lines */}
+                  <div className="absolute top-4 left-4 right-4 h-0.5 bg-gray-300"></div>
+                  
+                  {/* Progressive connecting lines */}
+                  <div 
+                    className="absolute top-4 left-4 h-0.5 bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-700 ease-out"
+                    style={{ 
+                      width: formData.autoGenerateSite 
+                        ? 'calc(25% + 8px)' // Connect to site icon (25% is 1/4 of the way)
+                        : '0%' // No connection if site not auto-generated
+                    }}
+                  ></div>
+                  
+                  {/* Customer */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Users className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-xs font-medium text-teal-600">Customer</span>
+                  </div>
+                  
+                  {/* Site */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white transition-all duration-300 ${
+                      formData.autoGenerateSite 
+                        ? 'bg-teal-600' 
+                        : 'bg-gray-300'
+                    }`}>
+                      <MapPin className={`w-4 h-4 ${formData.autoGenerateSite ? 'text-white' : 'text-gray-500'}`} />
+                    </div>
+                    <span className={`text-xs font-medium transition-colors duration-300 ${
+                      formData.autoGenerateSite ? 'text-teal-600' : 'text-gray-500'
+                    }`}>
+                      Site
+                    </span>
+                  </div>
+                  
+                  {/* Quote */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Quote</span>
+                  </div>
+                  
+                  {/* Job */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <Target className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Job</span>
+                  </div>
+                  
+                  {/* Invoice */}
+                  <div className="flex flex-col items-center relative z-10">
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center mb-2 shadow-sm border-2 border-white">
+                      <CheckCircle className="w-4 h-4 text-gray-500" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500">Invoice</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600 text-center leading-relaxed">
+                {formData.autoGenerateSite 
+                  ? "Excellent! You've created both your customer and site in one step. Now let's create a quote to show your customer what services you can provide!"
+                  : "Great start! You've created your first customer. Now let's add a site where work will be performed."}
+              </p>
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button 
+                  onClick={handleContinueToNextStep}
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white flex items-center justify-center gap-2"
+                >
+                  Continue to {formData.autoGenerateSite ? "Create Quote" : "Add Site"}
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                
+                {onNavigateBackToTutorials && (
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBackToTutorials}
+                    className="w-full"
+                  >
+                    Back to Basics
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   )
 }
