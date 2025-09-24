@@ -42,6 +42,7 @@ import { AddAssetScreen } from "./screens/add-asset-screen"
 import { DashboardMainScreen } from "./screens/dashboard-main-screen"
 import { AddCustomerScreen } from "./screens/add-customer-screen"
 import { ReportsScreen } from "./screens/reports-screen"
+import { DashboardBusinessHealthScreen } from "./screens/dashboard-business-health-screen"
 import { LiveChatScreen } from "./screens/live-chat-screen"
 import { MarketplaceScreen } from "./screens/marketplace-screen"
 import { LogJobInvoiceTutorialScreen } from "./screens/log-job-invoice-tutorial-screen"
@@ -75,7 +76,7 @@ export function MainLayout() {
   const [activeTab, setActiveTab] = useState<"wizard" | "tutorials">("wizard")
   const [expandedItems, setExpandedItems] = useState<string[]>(["Dashboard", "Onboarding"])
   const [currentScreen, setCurrentScreen] = useState<
-    "dashboard" | "log-job" | "wizard" | "tutorials" | "add-customer" | "reports" | "marketplace" | "log-quote" | "add-site" | "add-asset" | "log-job-invoice-tutorial" | "job-summary-invoice-tutorial"
+    "dashboard" | "log-job" | "wizard" | "tutorials" | "add-customer" | "reports" | "marketplace" | "log-quote" | "add-site" | "add-asset" | "log-job-invoice-tutorial" | "job-summary-invoice-tutorial" | "business-health-dashboard"
   >("dashboard")
   const [selectedDashboardItem, setSelectedDashboardItem] = useState("Main")
   const [isLoggingJobCompleted, setIsLoggingJobCompleted] = useState(false)
@@ -205,11 +206,11 @@ export function MainLayout() {
   }
 
   const handleNavigateToReportsFromOnboarding = (showGuide?: boolean) => {
-    setCurrentScreen("reports")
+    setCurrentScreen("business-health-dashboard")
     if (showGuide) {
       setActiveTab("wizard") // Use wizard tab when coming from completion screen with guide
     } else {
-      setActiveTab("wizard") // Normal reports view otherwise
+      setActiveTab("wizard") // Normal business health dashboard view
     }
   }
 
@@ -482,6 +483,26 @@ export function MainLayout() {
                         className={`w-2 h-2 rounded-full mr-3 ${activeTab === "tutorials" ? "bg-white" : "bg-teal-400"}`}
                       />
                       Tutorials & Videos
+                    </Button>
+                  )}
+                  {/* Business Health Dashboard - Available after required tasks */}
+                  {areRequiredTasksCompleted && (
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start text-left h-7 text-xs ${
+                        currentScreen === "business-health-dashboard"
+                          ? "text-white bg-teal-600 hover:bg-teal-600"
+                          : "text-slate-300 hover:text-white hover:bg-slate-600"
+                      }`}
+                      onClick={() => {
+                        setActiveTab("wizard")
+                        setCurrentScreen("business-health-dashboard")
+                      }}
+                    >
+                      <div
+                        className={`w-2 h-2 rounded-full mr-3 ${currentScreen === "business-health-dashboard" ? "bg-white" : "bg-teal-400"}`}
+                      />
+                      Revenue Tracker
                     </Button>
                   )}
                 </div>
@@ -917,6 +938,25 @@ export function MainLayout() {
           ) : currentScreen === "job-summary-invoice-tutorial" ? (
             <JobSummaryInvoiceTutorialScreen 
               onBackToTutorials={handleBackToTutorialsFromInvoiceWorkflow}
+            />
+          ) : currentScreen === "business-health-dashboard" ? (
+            <DashboardBusinessHealthScreen 
+              onNavigateToQuote={() => {
+                setCurrentScreen("log-quote")
+                setActiveTab("wizard")
+              }}
+              onNavigateToJob={() => {
+                setCurrentScreen("log-job")
+                setActiveTab("wizard")
+              }}
+              onNavigateToInvoice={() => {
+                // For now, navigate to job creation since we don't have a direct invoice screen
+                setCurrentScreen("log-job-invoice-tutorial")
+                setActiveTab("wizard")
+              }}
+              onBack={() => {
+                setCurrentScreen("wizard")
+              }}
             />
           ) : (
             <OnboardingProvider 
