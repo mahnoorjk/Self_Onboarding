@@ -38,7 +38,7 @@ const quotesData = [
 const jobsData = [
   { name: 'In Progress', value: 12, color: '#3498DB' }, // Blue - In Progress
   { name: 'Completed', value: 8, color: '#27AE60' }, // Green - Completed (matching Paid/Accepted)
-  { name: 'Scheduled', value: 4, color: '#BDC3C7' }, // Gray - Scheduled
+  { name: 'Allocated', value: 4, color: '#BDC3C7' }, // Gray - Scheduled
 ]
 
 const invoicesData = [
@@ -93,8 +93,9 @@ export function DashboardBusinessHealthScreen({
 
   // Calculate key metrics
   const outstandingQuotesValue = 15420 // £
-  const completedJobsValue = 28750 // £
-  const outstandingInvoicesValue = 12340 // £
+  const completedJobsValue = 28750 // £ - Forecasted Revenue (completed work)
+  const paidInvoicesValue = 18500 // £ - Revenue (actual money received)
+  const outstandingInvoicesValue = 12340 // £ - Outstanding invoices (still owed)
 
   // Date filter state
   const [dateFilter, setDateFilter] = useState("this-month")
@@ -120,7 +121,7 @@ export function DashboardBusinessHealthScreen({
               <SelectContent>
                 <SelectItem value="this-week">This Week</SelectItem>
                 <SelectItem value="this-month">This Month</SelectItem>
-                <SelectItem value="last-month">Last Month</SelectItem>
+                <SelectItem value="last-month">Previous Month</SelectItem>
                 <SelectItem value="this-quarter">This Quarter</SelectItem>
                 <SelectItem value="this-year">This Year</SelectItem>
               </SelectContent>
@@ -134,11 +135,11 @@ export function DashboardBusinessHealthScreen({
           <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Revenue</p>
+                  <p className="text-sm text-gray-600 font-medium">Forecasted Revenue</p>
                   <p className="text-2xl font-bold text-gray-900">£{completedJobsValue.toLocaleString()}</p>
                 </div>
               </div>
@@ -148,12 +149,12 @@ export function DashboardBusinessHealthScreen({
           <Card className="border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-600 rounded-lg flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600 font-medium">Outstanding</p>
-                  <p className="text-2xl font-bold text-gray-900">£{outstandingInvoicesValue.toLocaleString()}</p>
+                  <p className="text-sm text-gray-600 font-medium">Revenue</p>
+                  <p className="text-2xl font-bold text-gray-900">£{paidInvoicesValue.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
